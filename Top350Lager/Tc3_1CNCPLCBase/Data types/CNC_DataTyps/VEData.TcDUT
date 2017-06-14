@@ -1,0 +1,11 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="VEData" Id="{1288a3ca-ac00-4fa5-ae20-4dfb1fb089c9}">
+    <Declaration><![CDATA[TYPE VEData :
+STRUCT
+	AHLI_UNS32_Data: ARRAY[0..HLI_EXT_VAR32_MAXIDX] OF UDINT;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

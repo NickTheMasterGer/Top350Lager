@@ -1,0 +1,13 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="ST_SoE_String" Id="{1173566c-26cc-4788-8b80-70add751583a}">
+    <Declaration><![CDATA[TYPE ST_SoE_String :
+STRUCT
+	iActualSize: UINT;
+	iMaxSize: UINT;
+	strData: STRING(MAX_STRING_LENGTH);
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

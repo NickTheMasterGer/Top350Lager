@@ -1,0 +1,95 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4020.12">
+  <POU Name="MAIN" Id="{d0325e41-2b62-4523-8a22-095faf0a29ad}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MAIN
+VAR	
+	ZyklenString:STRING;
+	Trennscheibe AT %Q*:INT;
+	DigitalIn AT %I*:INT;
+	temp:bool;
+END_VAR
+VAR PERSISTENT
+	ZyklenInt:LINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(****************************************************************************************)
+(* POU:		MAIN                     													*)
+(* Type:	PRG																			*)
+(* Author: 	HR , TV                                              						*)
+(* Date: 	24.01.11																	*)
+(* Last:	21.01.14																*)
+(* Rev.: 	1.02                                               							*)
+(* ------------------------------------------------------------------------------------ *)
+(* Desc:	Main program frame for CNC sample applications								*)
+(****************************************************************************************)
+
+(****************************************************************************************)
+(*								Infrastructure programs									*)
+(****************************************************************************************)
+PRG_ShowMessages();
+(****************************************************************************************)
+(*										CNC programs									*)
+(****************************************************************************************)
+HLI3_Init(); 
+(* Call CNC related code only if the HLI has been initialized succesfully! *)
+IF CNCSystem.bHLIInit THEN
+	PRG_AxesHandler();    	
+	PRG_ManualMode();  
+	PRG_ChannelHandler();
+	PRG_CNCVariablesViewer();
+END_IF
+
+(* Reset the reset flag from HMI *)
+PLCReset := FALSE;
+
+IF Global_CNC.CNCSystem.Channel[0].M[99].bState_rw THEN
+	Global_CNC.CNCSystem.Channel[0].M[99].bState_rw:=FALSE;
+	ZyklenInt:=ZyklenInt+1;
+	ZyklenString:=LINT_TO_STRING(ZyklenInt);
+END_IF
+
+IF Global_CNC.CNCSystem.Channel[0].M[100].bState_rw THEN
+	Global_CNC.CNCSystem.Channel[0].M[100].bState_rw:=FALSE;
+	ZyklenInt:=0;
+	ZyklenString:=LINT_TO_STRING(ZyklenInt);
+END_IF
+
+IF Global_CNC.CNCSystem.Channel[0].M[101].bState_rw THEN
+	Global_CNC.CNCSystem.Channel[0].M[101].bState_rw:=FALSE;
+	Trennscheibe:=128;
+END_IF
+IF Global_CNC.CNCSystem.Channel[0].M[102].bState_rw THEN
+	Global_CNC.CNCSystem.Channel[0].M[102].bState_rw:=FALSE;
+	Trennscheibe:=0;
+END_IF
+temp:=GETBIT32(DigitalIn,6);
+IF NOT temp AND Global_CNC.CNCSystem.Channel[0].ActState=4 THEN
+	PLCMachineMode[1].Error:=TRUE;
+	PLCMachineMode[1].Stop:=true;
+END_IF
+PLCMachineMode[1].Stop:=false;
+]]></ST>
+    </Implementation>
+    <LineIds Name="MAIN">
+      <LineId Id="3" Count="22" />
+      <LineId Id="27" Count="4" />
+      <LineId Id="43" Count="2" />
+      <LineId Id="49" Count="0" />
+      <LineId Id="47" Count="0" />
+      <LineId Id="46" Count="0" />
+      <LineId Id="54" Count="0" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="50" Count="3" />
+      <LineId Id="34" Count="0" />
+      <LineId Id="63" Count="2" />
+      <LineId Id="67" Count="4" />
+      <LineId Id="35" Count="1" />
+      <LineId Id="76" Count="1" />
+      <LineId Id="74" Count="0" />
+      <LineId Id="88" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

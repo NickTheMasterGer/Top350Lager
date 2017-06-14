@@ -1,0 +1,25 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="ST_SlaveState" Id="{b576ccdf-3c22-4a33-b427-adf6497f1144}">
+    <Declaration><![CDATA[TYPE ST_SlaveState :
+STRUCT
+	/// slave state 
+	eEcState: E_EcCommState;
+	nReserved: UINT;
+	bError: BOOL;
+	bInvalidVPRS: BOOL;
+	nReserved2: UINT;
+	/// link state 
+	bNoCommToSlave: BOOL;
+	bLinkError: BOOL;
+	bMissingLink: BOOL;
+	bUnexpectedLink: BOOL;
+	bPortA: BOOL;
+	bPortB: BOOL;
+	bPortC: BOOL;
+	bPortD: BOOL;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

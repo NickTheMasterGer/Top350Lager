@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4018.5">
+  <POU Name="PRG_Demo" Id="{4ca68348-5343-4f93-a378-3e43397bc7de}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM PRG_Demo
+VAR
+	sLine1: STRING;
+	sLine2: STRING;
+	fbWriteZeroFddefault: FB_WriteCNCZeroOffsetDefault;
+	bTest: BOOL;
+	fbReadActiceG: HLI3_GetChannelActiveG;
+	
+	bReadG: BOOL;
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[PRG_MachineStatusV2();
+
+
+sLine1 := 'Test line 1';
+sLine2 := 'Test line two';
+
+fbWriteZeroFddefault(
+	bExecute:= bTest, 
+	nG159Index:= 5 , 
+	nChanIdx:=0, 
+	bBusy=> , 
+	bError=> , 
+	nErrorID=> );
+	
+	
+fbReadActiceG(
+	bExec:= bReadG, 
+	nChanIdx:= 0 , 
+	ActiveG=> , 
+	bBusy=> , 
+	bError=> , 
+	nErrorID=> );	
+	
+;
+	]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

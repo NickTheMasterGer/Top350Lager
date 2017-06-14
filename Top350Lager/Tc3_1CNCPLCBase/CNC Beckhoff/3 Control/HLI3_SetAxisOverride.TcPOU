@@ -1,0 +1,38 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.23">
+  <POU Name="HLI3_SetAxisOverride" Id="{47ef147b-be2d-45e5-90e9-4af3c6dbda12}">
+    <Declaration><![CDATA[FUNCTION HLI3_SetAxisOverride : BOOL
+VAR_INPUT
+	/// number of Axis 
+	nHliAxisIdx: INT;
+	nOverride: UINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: HLI_SetAxisOverride                               *)
+(* --------------------------------------------------------- *)
+(*   Desc: Set the Axis Override                             *)
+(* Author: TV                                                *)
+(*   Date: 20.12.2007                                        *)
+(*   Rev.: 1.0                                               *)
+(*   Rev.: 1.1 MiB 19.11.2012 Tc3                            *)
+(* ========================================================= *)
+IF NOT (HLI3_CheckAxisValid(nHliAxisIdx := nHliAxisIdx)) THEN
+	HLI3_SetAxisOverride := FALSE;
+	RETURN;
+END_IF
+
+
+(* Limit the override *)
+IF nOverride > 1200	THEN nOverride := 1200; END_IF
+IF nOverride < 0 THEN nOverride := 0; END_IF
+
+	gpAx[nHliAxisIdx]^.ipo_mc_control.override.enable_w  := TRUE;
+	gpAx[nHliAxisIdx]^.ipo_mc_control.override.command_w := nOverride;
+
+HLI3_SetAxisOverride := TRUE;
+]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

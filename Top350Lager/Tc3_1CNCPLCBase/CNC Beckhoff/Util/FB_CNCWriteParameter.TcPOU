@@ -1,0 +1,398 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4019.0">
+  <POU Name="FB_CNCWriteParameter" Id="{3e87bd41-96a0-47d6-9de0-ca622c3c643e}" SpecialFunc="None">
+    <Declaration><![CDATA[///*********************************************************************************************************
+///NAME.......................:		FB_CNCWriteParameter
+///DATUM....................:			03.07.2015
+///AUTOR....................:			Thomas Voß
+///VERSION................:			1.2
+///
+///Description.: 	The function block allows to write cnc parameters to the CNC kernel.					
+///**********************************************************************************************************
+FUNCTION_BLOCK FB_CNCWriteParameter
+VAR_INPUT
+	/// Channel Id
+	nChannelId: UINT;
+	/// log. Axis Id  
+	nLogAxisId: UINT;
+	bExecute: BOOL;
+	/// numbers of parameters 
+	nNumParameters: INT;
+	/// Parameter type
+	eParameterType: E_CNCParameterTypes;
+	/// Windows temp file for sub lists
+	strTempPath: STRING;
+END_VAR
+VAR_OUTPUT
+	bBusy: BOOL;
+	bError: BOOL;
+	nErrorID: INT;
+END_VAR
+VAR_IN_OUT
+	stParameter: ARRAY[1..200] OF ST_CNCParameter;
+END_VAR
+VAR
+	fbOnTrigger: R_TRIG;
+	Step: UDINT;
+	FbAdsWrite: ADSWRITE;
+	strParameterLine: STRING(255);
+	strFileName: STRING(255);
+	strHeader: STRING(255);
+	TimeOut: TON;
+	m: DINT;
+	/// Text To File 
+	fbFileOpen: FB_FileOpen;
+	fbFileRead: FB_FileRead;
+	fbFilePuts: FB_FilePuts;
+	fbFileClose: FB_FileClose;
+	hFileOutput: UINT := 0;
+END_VAR
+VAR CONSTANT
+	nMaxParameters: INT := 200;
+	/// Ads Interface 
+	nAdsPortNumber: UINT := 553;
+	nAdsIndexGroup: UDINT := 16#20100;
+	nAdsIndexGroupAxisParameter: UDINT := 16#20200;
+	nAdsIndexOffsetlogAxisNumber: UDINT := 16#37;
+	nAdsIndexOffsetChannelParameter: UDINT := 16#34;	
+	nAdsIndexOffsetAxisParameter: UDINT := 16#18;
+	nAdsIndexOffsetZeroOffsets: UDINT := 16#2E;
+	nAdsIndexOffsetToolParameter: UDINT := 16#30;
+	nAdsIndexOffsetClampPosition: UDINT := 16#32;
+	nAdsIndexOffsetCompensationTable: UDINT := 16#39;
+	/// Time Out Error 
+	ErrID_1: INT := 1;
+	/// Fehler beim Öffnen der Parameterdatei 
+	ErrID_2: INT := 2;
+	/// ADS - Fehler : Vorgabe Achs ID 
+	ErrID_3: INT := 3;
+	/// ADS - Fehler : Aktivierung der Parameterliste 
+	ErrID_4: INT := 4;
+	/// Invalid   CNC Parameter Type 
+	ErrID_5: INT := 5;
+	/// Invalid   Axis Number  
+	ErrID_6: INT := 6;
+	/// Invalid   Channel Number  
+	ErrID_7: INT := 7;
+	/// Invalid   Number  of Parameters 
+	ErrID_8: INT := 8;
+	/// File Error 
+	ErrID_9: INT := 9;
+	/// Invalid Channel State 
+	ErrID_10: INT := 10;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+fbOnTrigger(CLK:= bExecute);
+
+IF fbOnTrigger.Q THEN
+	Step 	:= 10;
+	nErrorID 	:= 0;
+	bError	 := 0;
+	bBusy := TRUE;
+END_IF
+
+CASE Step OF
+0:
+	bBusy := FALSE;
+
+10: (* check input parameters *)
+	IF (nNumParameters < 1 OR nNumParameters > nMaxParameters) THEN
+		nErrorID 	:= ErrID_8;
+		Step := 999;
+	ELSE
+		CASE eParameterType OF
+				
+			CNC_AxisParameter:
+				IF (nLogAxisId <= 0  OR nLogAxisId > 64) THEN
+					nErrorID 	:= ErrID_6;
+					Step := 999;
+	
+				ELSIF (nChannelID <= 0 OR nChannelID	 > 12	) THEN
+					nErrorID 	:= ErrID_7;
+					Step := 999;
+				ELSE
+					Step := 12;
+				END_IF
+
+			CNC_ChannelParameter:
+				IF (nChannelID <= 0 OR nChannelID > 12) THEN
+					nErrorID 	:= ErrID_7;
+					Step := 999;
+				ELSE
+					Step := 12;
+				END_IF
+
+			CNC_ToolParameter:
+				IF (nChannelID <= 0 OR nChannelID > 12) THEN
+					nErrorID 	:= ErrID_7;
+					Step := 999;
+				ELSE
+					Step := 12;
+				END_IF
+	
+			CNC_ClampPosition:
+				IF (nChannelID <= 0 OR nChannelID > 12) THEN
+					nErrorID 	:= ErrID_7;
+					Step := 999;
+				ELSE
+					Step := 12;
+				END_IF
+	
+			CNC_ZeroOffsets:
+				IF (nChannelID <= 0 OR nChannelID > 12) THEN
+					nErrorID 	:= ErrID_7;
+					Step := 999;
+				ELSE
+					Step := 12;
+				END_IF
+		END_CASE
+	END_IF
+
+	fbFileOpen.bExecute := FALSE;
+	
+	// Check Channel State
+	IF (cncSystem.Channel[nChannelId-1].ActState <> HLI_IMCM_PROCESS_SELECTED AND 
+		cncSystem.Channel[nChannelId-1].ActState <> HLI_IMCM_PROCESS_READY) THEN
+		nErrorID 	:= ErrID_10;
+		Step := 999;
+	END_IF
+
+12:	(* create file name and list file header  *)
+	strHeader := '';
+
+	CASE eParameterType OF
+
+		CNC_AxisParameter:
+			strFileName := CONCAT(strTempPath, '\axis');
+			strFileName := CONCAT(strFileName, UINT_TO_STRING(nLogAxisId));
+			strFileName := CONCAT(strFileName, '.lis');
+
+			strHeader := 'kopf.achs_nr ';
+			strHeader := CONCAT(strHeader, UINT_TO_STRING(nLogAxisId));
+			Step := 15;
+		CNC_ChannelParameter:
+			strFileName := CONCAT(strTempPath, '\channel');			
+			strFileName := CONCAT(strFileName, UINT_TO_STRING(nChannelID));
+			strFileName := CONCAT(strFileName, '.lis');
+			Step := 15;
+		CNC_ToolParameter:			
+			strFileName := CONCAT(strTempPath, '\ToolCh');
+			strFileName := CONCAT(strFileName, UINT_TO_STRING(nChannelID));
+			strFileName := CONCAT(strFileName, '.lis');
+			Step := 15;
+		CNC_ClampPosition:
+			strFileName := CONCAT(strTempPath, '\ClampPosCh');			
+			strFileName := CONCAT(strFileName, UINT_TO_STRING(nChannelID));
+			strFileName := CONCAT(strFileName, '.lis');
+			Step := 15;
+		CNC_ZeroOffsets:			
+			strFileName := CONCAT(strTempPath, '\ZeroOffsetsChh');
+			strFileName := CONCAT(strFileName, UINT_TO_STRING(nChannelID));
+			strFileName := CONCAT(strFileName, '.lis');
+			Step := 15;
+		ELSE
+			nErrorID 	:= ErrID_5;
+			Step := 999;
+	END_CASE
+
+15:	(* write file to destination folder *)
+	fbFileOpen.sNetId := '';
+	fbFileOpen.sPathName := strFileName;
+	fbFileOpen.nMode := FOPEN_MODEWRITE OR FOPEN_MODETEXT;
+	fbFileOpen.ePath := PATH_GENERIC;
+	fbFileOpen.tTimeout := t#1s;
+	fbFileOpen.bExecute := TRUE;
+	Step := 16;
+
+16:
+	IF ( NOT fbFileOpen.bBusy ) THEN
+		IF ( fbFileOpen.bError ) THEN
+			nErrorID  :=ErrID_9 ;
+			bError := TRUE;
+			Step := 999;
+		ELSE
+			hFileOutput := fbFileOpen.hFile;
+			fbFilePuts.bExecute:= FALSE;
+			Step := 17;
+		END_IF
+	END_IF
+
+
+17: (* Write Header File *)
+	fbFilePuts.sNetId:='';
+	fbFilePuts.hFile:=hFileOutput;
+	fbFilePuts.bExecute:=TRUE;
+	fbFilePuts.tTimeout:=t#10s;
+	fbFilePuts.sLine :=strHeader;
+	Step := 18;
+
+18:
+	IF ( NOT fbFilePuts.bBusy ) THEN
+		IF ( fbFilePuts.bError ) THEN
+			 nErrorID  :=ErrID_9 ;
+			bError := TRUE;
+			Step := 999;
+		ELSE
+			fbFilePuts.bExecute:= FALSE;
+			m := 1;
+			Step := 19;
+		END_IF
+	END_IF
+
+
+19:	(* Write Parameter lines *)
+		strParameterLine :=  CONCAT('$N',stParameter[m].strName);
+		strParameterLine :=  CONCAT(strParameterLine,'   ');
+		strParameterLine := CONCAT(strParameterLine, stParameter[m].strValue);
+		fbFilePuts.sLine :=strParameterLine;
+		fbFilePuts.bExecute:= TRUE;
+		Step := 20;
+20:
+		IF ( NOT fbFilePuts.bBusy ) THEN
+			IF ( fbFilePuts.bError ) THEN
+				 nErrorID  :=ErrID_9 ;
+				bError := TRUE;
+				Step := 999;
+			ELSE
+				Step := 21;
+			END_IF
+		END_IF
+
+21:	(* Next Line *)
+	IF (m+1 <= nMaxParameters AND m+1 <= nNumParameters) THEN
+		m := m+1;
+		fbFilePuts.bExecute:= FALSE;
+		Step := 19;
+	ELSE
+		fbFilePuts.bExecute:= FALSE;
+		Step := 22;
+	END_IF
+
+22:	(* Write footer *)
+	fbFilePuts.sLine :='$NEnde';
+	fbFilePuts.bExecute:= TRUE;
+	Step := 23;
+
+23:
+	IF ( NOT fbFilePuts.bBusy ) THEN
+		IF ( fbFilePuts.bError ) THEN
+			 nErrorID  :=ErrID_9 ;
+			bError := TRUE;
+			Step := 999;
+		ELSE
+			fbFileClose.bExecute:=FALSE;
+			Step := 30;
+		END_IF
+	END_IF
+
+
+30:	(* Close File *)
+	fbFileClose.sNetId:='';
+	fbFileClose.hFile:=hFileOutput;
+	fbFileClose.bExecute:=TRUE;
+	fbFileClose.tTimeout:=t#1s;
+
+	IF ( NOT fbFileClose.bBusy ) THEN
+		IF ( fbFileClose.bError ) THEN
+			 nErrorID  :=ErrID_9 ;
+			bError := TRUE;
+			Step := 999;
+		ELSE
+			hFileOutput := 0;
+			Step := 35;
+		END_IF
+	END_IF
+
+	35:
+		CASE eParameterType OF
+			CNC_AxisParameter:
+				Step := 60;
+			CNC_ChannelParameter:
+				Step := 60;
+			CNC_ToolParameter:
+				Step := 60;
+			CNC_ClampPosition:
+				Step := 60;
+			CNC_ZeroOffsets:
+				Step := 60;
+		END_CASE
+
+	40:	(* logical axis ID*)
+		TimeOut(IN:=FALSE);
+		FbAdsWrite( Port := 553, IdxGrp := nAdsIndexGroup  + nChannelID, IdxOffs := (nAdsIndexOffsetlogAxisNumber), LEN := SIZEOF(nLogAxisID), SrcAddr := ADR(nLogAxisID),TMOUT := T#1S, WRITE := TRUE);
+		Step := 50;
+	50:
+		TimeOut(IN:=TRUE, PT:=T#2S);
+
+		FbAdsWrite();
+		IF FbAdsWrite.BUSY = FALSE THEN
+			IF NOT FbAdsWrite.ERR THEN
+				FbAdsWrite( WRITE := FALSE);
+				Step := 60;
+			ELSE
+				FbAdsWrite( WRITE := FALSE);
+				nErrorID := ErrID_3;
+				Step := 999;
+			END_IF
+		END_IF
+
+		(* error timeout *)
+		IF TimeOut.Q THEN
+			nErrorID 	:= ErrID_1;
+			Step   	:= 999;
+		END_IF
+
+	60:	(* activate List File *)
+		TimeOut(IN:=FALSE);
+
+		CASE eParameterType OF
+
+		CNC_AxisParameter:
+			FbAdsWrite( Port := nAdsPortNumber, IdxGrp := nAdsIndexGroupAxisParameter  + nLogAxisId, IdxOffs := (nAdsIndexOffsetAxisParameter), LEN := SIZEOF(strFileName), SrcAddr := ADR(strFileName), WRITE := TRUE);
+		CNC_ChannelParameter:
+			FbAdsWrite( Port := nAdsPortNumber, IdxGrp := nAdsIndexGroup  + nChannelID, IdxOffs := (nAdsIndexOffsetChannelParameter), LEN := SIZEOF(strFileName), SrcAddr := ADR(strFileName), WRITE := TRUE);
+		CNC_ToolParameter:
+			FbAdsWrite( Port := nAdsPortNumber, IdxGrp := nAdsIndexGroup  + nChannelID, IdxOffs := (nAdsIndexOffsetToolParameter), LEN := SIZEOF(strFileName), SrcAddr := ADR(strFileName), WRITE := TRUE);
+		CNC_ClampPosition:
+			FbAdsWrite( Port := nAdsPortNumber, IdxGrp := nAdsIndexGroup  + nChannelID, IdxOffs := (nAdsIndexOffsetClampPosition), LEN := SIZEOF(strFileName), SrcAddr := ADR(strFileName), WRITE := TRUE);
+		CNC_ZeroOffsets:
+			FbAdsWrite( Port := nAdsPortNumber, IdxGrp := nAdsIndexGroup  + nChannelID, IdxOffs := (nAdsIndexOffsetZeroOffsets), LEN := SIZEOF(strFileName), SrcAddr := ADR(strFileName), WRITE := TRUE);
+		END_CASE
+
+		Step := 70;
+	70:
+		TimeOut(IN:=TRUE, PT:=T#2S);
+		FbAdsWrite();
+		IF FbAdsWrite.BUSY = FALSE THEN
+
+			IF NOT FbAdsWrite.ERR THEN
+				FbAdsWrite( WRITE := FALSE);
+				Step := 0;
+			ELSE
+				FbAdsWrite( WRITE := FALSE);
+				nErrorID := ErrID_4;
+				Step := 999;
+			END_IF
+		END_IF
+
+		(* error timeout *)
+		IF TimeOut.Q THEN
+			nErrorID 	:= ErrID_1;
+			Step   	:= 999;
+		END_IF
+
+999: (* Fehler *)
+		bBusy  := FALSE;
+		bError := TRUE;
+		Step 	 := 0;
+END_CASE
+
+fbFileOpen();
+fbFilePuts();
+fbFileClose();]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

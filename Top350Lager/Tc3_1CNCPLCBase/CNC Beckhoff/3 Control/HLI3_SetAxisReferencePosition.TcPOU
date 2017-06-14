@@ -1,0 +1,30 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI3_SetAxisReferencePosition" Id="{7ae2f890-f0b2-4f9c-9295-3d0eca9a5df7}">
+    <Declaration><![CDATA[FUNCTION HLI3_SetAxisReferencePosition : BOOL
+VAR_INPUT
+	bSetRefpos: BOOL;
+	nHliAxisIdx: INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: HLI_SetAxisReferenceposition                      *)
+(* --------------------------------------------------------- *)
+(*   Desc:                                                   *)
+(* Author: HR                                                *)
+(*   Date: 09.11.2010                                        *)
+(*   Rev.: 1.0                                               *)
+(* ========================================================= *)
+HLI3_SetAxisReferencePosition := FALSE;
+
+IF NOT HLI3_CheckAxisValid(nHliAxisIdx := nHliAxisIdx) THEN	
+	RETURN;
+END_IF
+
+(* set reference position *)
+gpAx[nHliAxisIdx]^.lr_mc_control.set_reference_position.command_w := bSetRefpos;
+HLI3_SetAxisReferencePosition := TRUE;]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,17 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="ST_TopologyData" Id="{9a0c9592-ce0b-444d-a612-49837bdf2c4a}">
+    <Declaration><![CDATA[TYPE ST_TopologyData :
+STRUCT
+	iOwnPhysicalAddr: UINT;
+	iOwnAutoIncAddr: UINT;
+	stPhysicalAddr: ST_PortAddr;
+	stAutoIncAddr: ST_PortAddr;
+	/// EC_AD, EC_DB, EC_BC 
+	iPortDelay: ARRAY[0..2] OF UDINT;
+	iReserved: ARRAY[0..7] OF UDINT;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

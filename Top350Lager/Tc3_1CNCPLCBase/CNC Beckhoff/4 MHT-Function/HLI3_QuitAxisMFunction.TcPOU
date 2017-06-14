@@ -1,0 +1,106 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI3_QuitAxisMFunction" Id="{f44ef96f-3063-4481-b0f6-e1b5a6564330}">
+    <Declaration><![CDATA[FUNCTION HLI3_QuitAxisMFunction : BOOL
+VAR_INPUT
+	/// Number of axis 
+	nHliAxisIdx: INT;
+END_VAR
+VAR
+	/// Data of a M/H techno unit 
+	pMHProcess: POINTER TO HLI_M_H_PROZESS;
+	/// Data of a spindle unit 
+	pSProcess: POINTER TO HLI_S_PROZESS;
+	/// Data of a techno unit 
+	pTProcess: POINTER TO HLI_T_PROZESS;
+	/// local pointer to Data of actual Axis 
+	pAxisData: POINTER TO HIGH_LEVEL_INTERFACE_AX;
+	/// local pointer to actual techno unit 
+	pActTechnoUnit: POINTER TO TECHNO_UNIT_AX;
+	/// loop variable 
+	idx: UINT;
+	/// Index of axis specific technology function at HLI 
+	nTechFctMaxIdx: UINT;
+	/// basis id of a tool 
+	nToolBasicId: UDINT;
+	/// spindle movement command 
+	SpdlMoveCmd: UINT;
+	/// SpindleRevolution 
+	Revolution: UDINT;
+	/// SpindleRevolution 
+	pRevolution: POINTER TO UDINT;
+	/// Number of M-function 
+	FuncNr: UDINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: HLI_QuitAxisMFunction                             *)
+(* --------------------------------------------------------- *)
+(*   Desc:                                                   *)
+(* Author: MK                                                *)
+(*   Rev.: 1.1                                               *)
+(*   Date: 18.07.2002                                        *)
+(*       : 08.04.2005                                        *)
+(* ========================================================= *)
+
+HLI3_QuitAxisMFunction := FALSE;
+IF NOT (HLI3_CheckAxisValid(nHliAxisIdx := nHliAxisIdx)) THEN
+	RETURN;
+END_IF
+
+
+(* get pointer to Axis data *)
+pAxisData := gpAx[nHliAxisIdx];
+
+(* test if there are open synchronisations  *)
+IF pAxisData^.used_units_std_sync_r > 0 THEN
+
+	nTechFctMaxIdx := pAxisData^.used_units_std_sync_r - 1;
+
+	FOR idx := 0 TO nTechFctMaxIdx DO
+	
+		(* get pointer to actual techno unit *)
+		pActTechnoUnit := ADR(pAxisData^.techno_unit_std_sync[idx]);
+	
+		(* test if this M-function has to be acknowledged *)
+		IF pActTechnoUnit^.please_rw = TRUE AND				(* request from CNC *)
+			pActTechnoUnit^.done_w = FALSE					(* not acknowledged *)
+		THEN
+	
+			IF pActTechnoUnit^.fkt_ctrl_r = HLI_INTF_M_FKT THEN
+				(* Example: read number of M-function *)
+				pMHProcess := ADR(pActTechnoUnit^.attribut_r.data[0]);
+				FuncNr := pMHProcess^.nr;
+				ADSLOG(strMsg:='Axis acknowledge of M-function: %d', nDINT:=UDINT_TO_DINT(FuncNr), strArg:='');
+			ELSE
+				IF pActTechnoUnit^.fkt_ctrl_r = HLI_INTF_SPINDEL THEN (* spindle-fuction *)
+					pSProcess := ADR(pActTechnoUnit^.attribut_r.data[0]);
+	
+					(* Example: read revolution of S-function *)
+					Revolution := DINT_TO_UINT(pSProcess^.rev);
+					ADSLOG(strMsg:='Spindle S-function: %d', nDINT:=UDINT_TO_DINT(Revolution), strArg:='');
+	
+					(* Example: read number of S-function *)
+					SpdlMoveCmd := pSProcess^.move_cmd;
+					ADSLOG(strMsg:='Spindle acknowledge of M-function: %d', nDINT:=SpdlMoveCmd, strArg:='');
+				ELSE
+					ADSLOGDINT( msgCtrlMask :=    ADSLOG_MSGTYPE_MSGBOX
+					                           OR ADSLOG_MSGTYPE_LOG,
+								msgFmtStr   := 'Axis acknowledge unknown type: %d',
+								dintArg     := pActTechnoUnit^.fkt_ctrl_r);
+				END_IF
+			END_IF
+	
+			(* acknowledge this M-function *)
+			pActTechnoUnit^.please_rw := FALSE;
+			pActTechnoUnit^.done_w := TRUE;
+	
+			HLI3_QuitAxisMFunction := TRUE;
+		END_IF
+	END_FOR
+
+END_IF]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

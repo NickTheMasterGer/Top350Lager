@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.24">
+  <DUT Name="ST_FastMFunctionItem" Id="{d48ded01-14b4-43aa-8678-a1dd22b4caaf}">
+    <Declaration><![CDATA[(****************************************************************************************)
+(* POU:		ST_FastMFunctionItem                     									*)
+(* Type:	STRUCT																		*)
+(* Author: 	RCH		                                             						*)
+(* Date: 	14/10/29																	*)
+(* Rev.: 	1.0                                               							*)
+(* ------------------------------------------------------------------------------------ *)
+(* Desc.:	Defines M function metadata content provided by HLI3_FastMFunctionProvider	*)
+(* ------------------------------------------------------------------------------------ *)
+(* Rev.:	<Enter revision number here>												*)
+(* Date:	<Enter revision data here>				                                   	*)
+(* Author:	<Enter author´s shortcut here>											 	*)
+(* Desc.:	<Enter description here>													*)
+(****************************************************************************************)
+TYPE ST_FastMFunctionItem :
+STRUCT
+	nFunctionNo		: UINT;			(* M function number *)
+	nOffset			: DINT;			(* Time offset with respect to the block change time *)
+	nCycleCount		: UDINT;		(* PLC cycle counter *)
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

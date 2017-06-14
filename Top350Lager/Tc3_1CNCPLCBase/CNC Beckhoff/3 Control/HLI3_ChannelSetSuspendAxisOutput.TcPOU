@@ -1,0 +1,28 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI3_ChannelSetSuspendAxisOutput" Id="{1e8bafc1-e16d-4c62-a346-d6b51b633489}">
+    <Declaration><![CDATA[FUNCTION HLI3_ChannelSetSuspendAxisOutput : BOOL
+VAR_INPUT
+	/// Number of channel 
+	nChanIdx: INT;
+	bSuspendAxis: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: HLI_ChannelSuspendAxisOutput                      *)
+(* --------------------------------------------------------- *)
+(*   Desc:                                                   *)
+(* Author: MK , MiB                                          *)
+(*   Date: 20.11.2012                                        *)
+(*   Rev.: 1.1                                               *)
+(* ========================================================= *)
+HLI3_ChannelSetSuspendAxisOutput := TRUE;
+IF NOT HLI3_CheckChannelValid(nChannel := nChanIdx) THEN
+	RETURN;
+END_IF
+gpCh[nChanIdx]^.bahn_mc_control.suspend_axis_output.command_w := bSuspendAxis;
+HLI3_ChannelSetSuspendAxisOutput := TRUE;]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

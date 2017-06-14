@@ -1,0 +1,17 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="E_SoE_AttribLen" Id="{a1869de2-361b-4533-ae2d-c4e087278958}">
+    <Declaration><![CDATA[TYPE E_SoE_AttribLen :
+(
+	eSoE_LEN_2BYTE := 1,
+	eSoE_LEN_4BYTE := 2,
+	eSoE_LEN_8BYTE := 3,
+	eSoE_LEN_V1BYTE := 4,
+	eSoE_LEN_V2BYTE := 5,
+	eSoE_LEN_V4BYTE := 6,
+	eSoE_LEN_V8BYTE := 7
+);
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

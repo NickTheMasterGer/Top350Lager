@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4019.0">
+  <GVL Name="Global_ManualMode" Id="{8a412fc0-c29f-4d5d-adf5-f4ce53d58495}">
+    <Declaration><![CDATA[VAR_GLOBAL
+/// Selection of manual mode controller 
+	geManualModeController: E_CNC_MM_Controller;
+	/// Manual mode control structures 
+	stManualModeParameter: ARRAY[0..11] OF ST_ManualModeParameter;
+	stManualModeControlElements: ARRAY[0..11] OF ST_ManualModeControlElements;
+	stManualModeState: ARRAY[0..11] OF ST_ManualModeState;
+	stManualModeControlElementState : ST_ManualModeControlElementState;
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

@@ -1,0 +1,751 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4018.2">
+  <POU Name="FB_ChannelError" Id="{ccb13238-5c5f-428c-b5a4-b35c163d6fa2}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_ChannelError
+VAR_INPUT
+	nChanIdx: INT;
+END_VAR
+VAR_OUTPUT
+	Valid: BOOL := FALSE;
+	/// Identification of channel error 
+	ChErrorID: UDINT;
+	/// Module name 
+	ModuleName: STRING;
+	/// Line in source file 
+	Line: DINT;
+	/// Multiple ID 
+	MultipleID: DINT;
+	/// Commandable function type 
+	CmdFunctionType: DINT;
+	/// Identification of the channel 
+	ChannelID: DINT;
+	/// Communication ID 
+	CommuID: DINT;
+	/// Cycle counter of CNC 
+	CycleCounter: UDINT;
+	/// Version name 
+	VersionName: STRING;
+	/// Remedy class of error 
+	RemedyClass: DINT;
+	/// Reaction class of error 
+	ReactionClass: DINT;
+	/// Body type of error 
+	BodyType: UDINT;
+	/// User message 
+	UserMessage: STRING;
+	/// Variables of error record body 
+	BodyTypeEnum: UDINT;
+	NcBlockNr: DINT := 0;
+	ProgName: STRING := '';
+	FileName: STRING := '';
+	FileOffset: UDINT := 0;
+	NcBlockOffset: DINT := 0;
+	TokenOffset: DINT := 0;
+	LogicalPathNr: DINT := 0;
+	AddProgInfo: STRING := '';
+	CommuMedium: DINT := 0;
+	CommuType: UDINT := 0;
+	CommuPartner: UDINT := 0;
+	FileLine: UDINT := 0;
+	ListType: DINT := 0;
+	StructName: STRING := '';
+	StrValue_1: STRING;
+	StrValue_2: STRING;
+	StrValue_3: STRING;
+	StrValue_4: STRING;
+	StrValue_5: STRING;
+	MeaningValue_1: STRING;
+	MeaningValue_2: STRING;
+	MeaningValue_3: STRING;
+	MeaningValue_4: STRING;
+END_VAR
+VAR
+	/// Index of channel specific HLI area 	
+	pMcError: POINTER TO MC_ERROR;
+	
+	pMcError2: POINTER TO MC_ERROR;
+	SatzR: HLI_ERROR_SATZ;
+	bInitialized: BOOL := FALSE;
+	bClear: BOOL := FALSE;
+	bUsed: ARRAY[0..CNC_EVENTS_MAXIDX] OF BOOL;
+	bToCleanUp: ARRAY[0..CNC_EVENTS_MAXIDX] OF BOOL;
+	LogEvent: ARRAY[0..CNC_EVENTS_MAXIDX] OF ADSLOGEVENT;
+	FlankeQuit: ARRAY[0..CNC_EVENTS_MAXIDX] OF R_TRIG;
+	pLog: POINTER TO ADSLOGEVENT;
+	fmtStr: STRING;
+	eventId: UDINT;
+	i: UDINT;
+	idx: UDINT := 0;
+	maxWarnings: UINT;
+	maxErrors: UINT;
+	maxUserEvents: UINT;
+	/// Gesamtzahl = Userevents und Errors 
+	maxEvents: UINT;
+	/// maximal index of an event 
+	maxIdxEvents: UINT;
+	countWarnings: UINT := 0;
+	countErrors: UINT := 0;
+	countUserEvents: UINT := 0;
+	start_idx: UINT;
+	stop_idx: UINT;
+	paraPointerArray: ARRAY[0..31] OF POINTER TO UDINT;
+	paraIndex: INT;
+	pRumpfNcProg: POINTER TO HLI_RUMPF_NC_PROG;
+	pRumpfNcProgLr: POINTER TO HLI_RUMPF_NC_PROG_LR;
+	pRumpfMds: POINTER TO HLI_RUMPF_MDS;
+	pRumpfKommu: POINTER TO HLI_RUMPF_KOMMU;
+	pRumpfRamDisk: POINTER TO HLI_RUMPF_RAMDISK;
+	pRumpfFile: POINTER TO HLI_RUMPF_FILE;
+	pRumpfIntprFile: POINTER TO HLI_RUMPF_INTPR_FILE;
+	pRumpfListeBinaer: POINTER TO HLI_RUMPF_LISTE_BINAER;
+	pRumpfGcm: POINTER TO HLI_RUMPF_GCM;
+	bTcComError: BOOL;	
+	bAxisErr : BOOL; 
+END_VAR
+VAR CONSTANT
+	XmlEventId_Rumpf: UDINT := 200;
+	XmlEventId_RumpfNcProg: UDINT := 201;
+	XmlEventId_RumpfNcProgLr: UDINT := 202;
+	XmlEventId_RumpfMds: UDINT := 203;
+	XmlEventId_RumpfKommu: UDINT := 204;
+	XmlEventId_RumpfRamDisk: UDINT := 205;
+	XmlEventId_RumpfFile: UDINT := 206;
+	XmlEventId_RumpfIntprFile: UDINT := 207;
+	XmlEventId_RumpfListeBinaer: UDINT := 208;
+	XmlEventId_RumpfGcm: UDINT := 209;
+	CNC_SOURCE_ID_BASE: UDINT := 551;
+	CNC_USER_SOURCE_ID_BASE: UDINT := 651;
+	MAX_CNC_ERRORS: UDINT := 49;
+	MAX_CNC_USER_EVENTS: UDINT := 49;
+	/// MAX_CNC_ERRORS + MAX_CNC_USER_EVENTS 
+	MAX_CNC_EVENTS: UDINT := 98;
+	/// MAX_CNC_EVENTS - 1 
+	CNC_EVENTS_MAXIDX: UDINT := 97;
+	ERR_BAHN_ONLINE_TRC_CALCULATION: UDINT := 50689;
+	ERR_ID_REPORT_CNC_RESET: UDINT := 270076;
+	ERR_ID_KIN_TRAFO_CONFIG: UDINT := 292030;
+	ERR_ID_KIN_TRAFO_INIT: UDINT := 292031;
+	ERR_ID_KIN_TRAFO_FORWARD: UDINT := 292032;
+	ERR_ID_KIN_TRAFO_BACKWARD: UDINT := 292033;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FB: FB_ChannelError                               	 *)
+(* --------------------------------------------------------- *)
+(*   Desc: FB transfers CNC Errors to the Event Logger		 *)
+(*   Author: ISG / TV                                        *)
+(*   Date: 12.10.2015                                        *)
+(*   Rev.: 1.3                                              *)
+(*															 *)
+(* ========================================================= *)
+
+(* check for channel no *)
+IF NOT HLI3_CheckChannelValid(nChannel := nChanIdx) THEN
+	RETURN;
+END_IF
+
+(* check for zero pointer *)
+IF gpCh[nChanIdx] = 0 THEN
+  RETURN;
+END_IF
+
+(* check for zero pointer, first channel is necessary for axis errors (Position controller errors) *)
+IF gpCh[0] = 0 THEN
+  RETURN;
+END_IF
+
+pMcError := ADR(gpCh[nChanIdx]^.mc_error);
+SatzR    := pMcError^.satz_r;
+
+IF bInitialized = FALSE THEN
+  pMcError^.enable_w := TRUE;    (* enable control unit for error messages *) 
+  bInitialized  := TRUE;
+  maxErrors     := UDINT_TO_UINT(MAX_CNC_ERRORS / gNrCh);
+  maxWarnings   := maxErrors / 5;
+  maxUserEvents := UDINT_TO_UINT(MAX_CNC_USER_EVENTS / gNrCh);
+  maxEvents     := maxUserEvents + maxErrors;
+
+  maxIdxEvents := (maxEvents - 1);
+  FOR i := 0 TO maxIdxEvents DO
+    (* ----------------------------------------- *)
+    (* initialize fixed elements of event        *)
+    (* ----------------------------------------- *)
+    pLog := ADR( LogEvent[i] );
+    pLog^.NETID := '';      (* Local Computer *)
+    pLog^.PORT:= 110;       (* Event Logger *)
+    pLog^.TMOUT:= t#10s;
+    pLog^.EventConfigData.Prio         := TCEVENTPRIO_IMPLICIT;
+    pLog^.EventConfigData.ProgId       := 'TcEventFormatter.TcXmlFormatter';
+    pLog^.EventConfigData.Flags        := TCEVENTFLAG_SRCID OR TCEVENTFLAG_LOG;
+    pLog^.EventConfigData.SourceString := '';
+    pLog^.EventConfigData.StreamType   := TCEVENTSTREAM_NORMAL;
+
+    IF i < maxErrors THEN
+      (* SourceID: 550 error texts, [ 551,  599] for single CNC error messages *)
+      pLog^.EventConfigData.SourceId := CNC_SOURCE_ID_BASE + i + (DINT_TO_UINT(nChanIdx)*maxErrors);
+    ELSE
+      (* SourceID: 650 user error texts, [ 651,  699] for single CNC user error messages "ERROR[]" *)
+      pLog^.EventConfigData.SourceId := CNC_USER_SOURCE_ID_BASE + i-maxErrors + (DINT_TO_UINT(nChanIdx)*maxUserEvents);
+    END_IF
+
+    FlankeQuit[i](CLK :=  pLog^.Quit);
+  END_FOR
+END_IF
+
+
+
+(* -------------------------------------------------------------------------*)
+(* test if events which have been reported shall be cleared again           *)
+(* -------------------------------------------------------------------------*)
+IF bClear THEN
+  bClear := FALSE;
+  countWarnings := 0;
+  countErrors := 0;
+  countUserEvents := 0;
+  FOR i := 0 TO maxIdxEvents DO
+    IF bToCleanup[i] = FALSE AND bUsed[i] THEN
+      bToCleanup[i] := TRUE;
+    END_IF
+  END_FOR
+END_IF
+
+
+(* -------------------------------------------------------------------------*)
+(* check for new error message                                              *)
+(* -------------------------------------------------------------------------*)
+
+(* Output for position controller errors is gpCh[0]^ *)
+IF gpCh[0]^.mc_error.semaphor_rw THEN	
+	SatzR := gpCh[0]^.mc_error.satz_r;		
+	bAxisErr := TRUE;				
+END_IF
+
+IF (pMcError^.semaphor_rw  OR bAxisErr)  THEN
+
+ 	IF  SatzR.kopf.cnc_channel > 0 THEN 
+  		IF (SatzR.kopf.cnc_channel-1 <> INT_TO_UINT(nChanIdx)) THEN	  
+			bAxisErr := FALSE;		
+    	RETURN;
+	END_IF
+  END_IF
+  
+  (* Initialize output variables that depend on error body type *)
+  NcBlockNr      := 0;
+  ProgName       := '';
+  FileName       := '';
+  FileOffset     := 0;
+  NcBlockOffset  := 0;
+  TokenOffset    := 0;
+  LogicalPathNr  := 0;
+  AddProgInfo    := '';
+
+  CommuMedium    := 0;
+  CommuType      := 0;
+  CommuPartner   := 0;
+
+  FileLine       := 0;
+  ListType       := 0;
+  StructName     := '';
+
+  StrValue_1     := '';
+  StrValue_2     := '';
+  StrValue_3     := '';
+  StrValue_4     := '';
+  StrValue_5     := '';
+
+  MeaningValue_1 := '';
+  MeaningValue_2 := '';
+  MeaningValue_3 := '';
+  MeaningValue_4 := '';
+
+
+  eventId := SatzR.kopf.error_id;
+
+  (*------------------------------------------------------------------*)
+  (* automatic clear old events if CNC reports reset                  *)
+  (*------------------------------------------------------------------*)
+  IF eventId = ERR_ID_REPORT_CNC_RESET THEN
+	  	IF bAxisErr THEN 
+    		gpCh[0]^.mc_error.semaphor_rw := FALSE;
+			bAxisErr := FALSE;
+		ELSE
+			pMcError^.semaphor_rw := FALSE;		
+		END_IF
+	
+    bClear := TRUE;
+    RETURN;
+  END_IF
+
+  
+  (*------------------------------------------------------------------*)
+  (* TcCom: kinematic transformation, map util_error_id to error_id   *)
+  (*------------------------------------------------------------------*)
+  IF    eventId = ERR_ID_KIN_TRAFO_CONFIG
+     OR eventId = ERR_ID_KIN_TRAFO_INIT  
+     OR eventId = ERR_ID_KIN_TRAFO_FORWARD
+     OR eventId = ERR_ID_KIN_TRAFO_BACKWARD
+   OR eventId = ERR_BAHN_ONLINE_TRC_CALCULATION
+  THEN
+    eventId := SatzR.kopf.util_error_id;
+    bTcComError := TRUE;
+  ELSE
+    bTcComError := FALSE;
+  END_IF
+   
+
+  (*-------------------------------*)
+  (* search unused event           *)
+  (*-------------------------------*)
+  IF eventId <= 1000 OR bTcComError THEN
+    countUserEvents := countUserEvents + 1;
+    start_idx       := maxErrors;
+    stop_idx        := maxErrors + maxUserEvents - 1;
+  ELSE
+    (*------------------------------------------------------------------*)
+    (* check maximum number of active warnings                          *)
+    (*------------------------------------------------------------------*)
+    IF SatzR.kopf.behebungs_klasse < 2 THEN
+      IF countWarnings > maxWarnings THEN
+		  IF (bAxisErr) THEN
+			  	gpCh[0]^.mc_error.semaphor_rw := FALSE;
+				bAxisErr := FALSE;
+		  ELSE	
+				pMcError^.semaphor_rw := FALSE;	  
+		  END_IF
+        
+        RETURN;  (* dismiss further warning *)
+      END_IF
+      countWarnings:= countWarnings + 1;
+    END_IF
+
+    countErrors := countErrors + 1;
+    start_idx   := 0;
+    stop_idx    := maxErrors - 1;
+  END_IF
+
+  FOR i := start_idx TO stop_idx DO
+    IF bUsed[i] = FALSE THEN
+      EXIT;
+    END_IF
+  END_FOR
+
+  IF i > stop_idx THEN
+    (*------------------------------------------------------------------*)
+    (* overflow -> dismiss actual message, wait for reset               *)
+    (*------------------------------------------------------------------*)
+	IF (bAxisErr) THEN
+		gpCh[0]^.mc_error.semaphor_rw := FALSE;
+		bAxisErr := FALSE;
+	ELSE	
+		pMcError^.semaphor_rw := FALSE;	  
+	END_IF	
+    RETURN;
+  END_IF
+  idx := i;
+
+
+  bUsed[idx] := TRUE;
+  pLog := ADR( LogEvent[idx] );
+
+  (* Initialisierungen fuer jeden Aufruf *)
+  paraIndex := 0;
+
+  (*
+    TCEVENTCLASS_NONE        := 0,  No class
+    TCEVENTCLASS_MAINTENANCE := 1,  Maintenance hint
+    TCEVENTCLASS_MESSAGE     := 2,  Message
+    TCEVENTCLASS_HINT        := 3,  Hint
+    TCEVENTCLASS_STATEINFO   := 4,  State information
+    TCEVENTCLASS_INSTRUCTION := 5,  Instruction
+    TCEVENTCLASS_WARNING     := 6,  Warning
+    TCEVENTCLASS_ALARM       := 7,  Alarm
+    TCEVENTCLASS_PARAMERROR
+  *)
+
+  IF SatzR.kopf.behebungs_klasse < 2 THEN
+    pLog^.EventConfigData.Class := TCEVENTCLASS_WARNING;
+    pLog^.EventConfigData.bQuitRequired := FALSE;  (* Hasn't to acknowledge the event *)
+  ELSE
+    pLog^.EventConfigData.bQuitRequired := TRUE;  (* Has to acknowledge the event *)
+    IF SatzR.kopf.behebungs_klasse < 7 THEN
+      pLog^.EventConfigData.Class := TCEVENTCLASS_ALARM;
+    ELSE
+      pLog^.EventConfigData.Class := TCEVENTCLASS_PARAMERROR;
+    END_IF
+  END_IF
+  pLog^.EventConfigData.Id := XmlEventId_Rumpf;
+
+  (*------------------------------------------------------------------*)
+  (* parameters 1 - 13 are content independent                        *)
+  (*------------------------------------------------------------------*)
+  fmtStr := '%d%d%d%d%s%d%d%d%d%d%s%d%s';  (* a string *)
+
+  (* If ChErrorID has a link to a sub string (other EventId and SourceId)  *)
+  (* a string is build of following syntax: '[SxEy]' with x as SourceId and y as EventId *)
+  (* in TcCncError.xml x alsways has value 2 and y is the ChErrorID of the CNC *)
+  (* ----------------------------------------------------*)
+  (* User specific error message                         *)
+  (* ----------------------------------------------------*)
+  IF eventId <= 1000 OR bTcComError THEN
+    UserMessage   := '[S650E'; (* sub string from SourceId 550 (see TcCncUserEvents.xml) and EventId 'eventId' *)
+  ELSE
+    UserMessage   := '[S550E'; (* sub string from SourceId 2 (see TcCncError.xml) and EventId 'eventId' *)
+  END_IF
+  UserMessage     := CONCAT(UserMessage, UDINT_TO_STRING(eventId));
+  UserMessage     := CONCAT(UserMessage, ']');
+
+  ChErrorID       := eventId;
+  ChannelID       := SatzR.kopf.cnc_channel;
+  RemedyClass     := SatzR.kopf.behebungs_klasse;
+  ReactionClass   := SatzR.kopf.reaktions_klasse;
+  ModuleName      := SatzR.kopf.modul_name.zeichen;
+  Line            := SatzR.kopf.line;
+  MultipleID      := SatzR.kopf.multiple_id;
+  CmdFunctionType := SatzR.kopf.bf_type;
+
+  CommuID         := SatzR.kopf.kommu_id;
+  CycleCounter    := SatzR.kopf.fb_zeitangabe.zykl_counter;
+  VersionName     := SatzR.kopf.version_name.zeichen;
+  BodyType        := SatzR.kopf.rumpf_typ;
+
+  paraPointerArray[paraIndex] := ADR(ChErrorID);
+  paraIndex := paraIndex + 1;
+  paraPointerArray[paraIndex] := ADR(ChannelID);
+  paraIndex := paraIndex + 1;
+  paraPointerArray[paraIndex] := ADR(RemedyClass);
+  paraIndex := paraIndex + 1;
+  paraPointerArray[paraIndex] := ADR(ReactionClass);
+  paraIndex := paraIndex + 1;
+  paraPointerArray[paraIndex] := ADR(ModuleName);
+  paraIndex := paraIndex + 1;
+  paraPointerArray[paraIndex] := ADR(Line);
+  paraIndex := paraIndex + 1;
+  paraPointerArray[paraIndex] := ADR(MultipleID);
+  paraIndex := paraIndex + 1;
+  paraPointerArray[paraIndex] := ADR(CmdFunctionType);
+  paraIndex := paraIndex + 1;
+  paraPointerArray[paraIndex] := ADR(CommuID);
+  paraIndex := paraIndex + 1;
+  paraPointerArray[paraIndex] := ADR(CycleCounter);
+  paraIndex := paraIndex + 1;
+  paraPointerArray[paraIndex] := ADR(VersionName);
+  paraIndex := paraIndex + 1;
+  paraPointerArray[paraIndex] := ADR(BodyType);
+  paraIndex := paraIndex + 1;
+  paraPointerArray[paraIndex] := ADR(UserMessage);
+  paraIndex := paraIndex + 1;
+
+
+  (*------------------------------------------------------------------------*)
+  (* Append values and meaning of values.                                   *)
+  (*------------------------------------------------------------------------*)
+  StrValue_1 := WertBToString(SatzR.rumpf.wert_1, 1);
+  StrValue_2 := WertBToString(SatzR.rumpf.wert_2, 2);
+  StrValue_3 := WertBToString(SatzR.rumpf.wert_3, 3);
+  StrValue_4 := WertBToString(SatzR.rumpf.wert_4, 4);
+  StrValue_5 := WertBToString(SatzR.rumpf.wert_5, 5);
+
+  paraPointerArray[paraIndex] := ADR(StrValue_1);
+  paraIndex := paraIndex + 1;
+  paraPointerArray[paraIndex] := ADR(StrValue_2);
+  paraIndex := paraIndex + 1;
+  paraPointerArray[paraIndex] := ADR(StrValue_3);
+  paraIndex := paraIndex + 1;
+  paraPointerArray[paraIndex] := ADR(StrValue_4);
+  paraIndex := paraIndex + 1;
+  paraPointerArray[paraIndex] := ADR(StrValue_5);
+  paraIndex := paraIndex + 1;
+
+  fmtStr := CONCAT(fmtStr, '%s%s%s%s%s');
+
+  MeaningValue_1 := WertToString(SatzR.rumpf.kennung_1, 1);
+  MeaningValue_2 := WertToString(SatzR.rumpf.kennung_2, 2);
+  MeaningValue_3 := WertToString(SatzR.rumpf.kennung_3, 3);
+  MeaningValue_4 := WertToString(SatzR.rumpf.kennung_4, 4);
+
+  paraPointerArray[paraIndex] := ADR(MeaningValue_1);
+  paraIndex := paraIndex + 1;
+  paraPointerArray[paraIndex] := ADR(MeaningValue_2);
+  paraIndex := paraIndex + 1;
+  paraPointerArray[paraIndex] := ADR(MeaningValue_3);
+  paraIndex := paraIndex + 1;
+  paraPointerArray[paraIndex] := ADR(MeaningValue_4);
+  paraIndex := paraIndex + 1;
+
+  fmtStr := CONCAT(fmtStr, '%s%s%s%s');
+
+
+
+  BodyTypeEnum := SatzR.kopf.rumpf_typ;
+
+  (*-------------------------------------------------------------------------*)
+  (*       HLI_RUMPF_TYP_NC_PROG                                             *)
+  (*-------------------------------------------------------------------------*)
+  IF BodyTypeEnum = HLI_RUMPF_TYP_NC_PROG THEN
+    pLog^.EventConfigData.Id := XmlEventId_RumpfNcProg;
+
+    pRumpfNcProg := ADR(SatzR.rumpf.maske);
+
+    (* Assign error body data to output variables *)
+    NcBlockNr     := pRumpfNcProg^.satz_nr;
+    ProgName      := pRumpfNcProg^.prog_name.zeichen;
+    FileName      := pRumpfNcProg^.file_name.zeichen;
+    FileOffset    := pRumpfNcProg^.fileoffset;
+    NcBlockOffset := pRumpfNcProg^.satzoffset;
+    TokenOffset   := pRumpfNcProg^.tokenoffset;
+    LogicalPathNr := pRumpfNcProg^.log_pfad_nr;
+    AddProgInfo   := pRumpfNcProg^.add_prog_info.zeichen;
+
+    (* Assign address of data to parameter array of the event *)
+    paraPointerArray[paraIndex] := ADR(NcBlockNr);
+    paraIndex := paraIndex + 1;
+    paraPointerArray[paraIndex] := ADR(ProgName);
+    paraIndex := paraIndex + 1;
+    paraPointerArray[paraIndex] := ADR(FileName);
+    paraIndex := paraIndex + 1;
+    paraPointerArray[paraIndex] := ADR(FileOffset);
+    paraIndex := paraIndex + 1;
+    paraPointerArray[paraIndex] := ADR(NcBlockOffset);
+    paraIndex := paraIndex + 1;
+    paraPointerArray[paraIndex] := ADR(TokenOffset);
+    paraIndex := paraIndex + 1;
+    paraPointerArray[paraIndex] := ADR(LogicalPathNr);
+    paraIndex := paraIndex + 1;
+    paraPointerArray[paraIndex] := ADR(AddProgInfo);
+    paraIndex := paraIndex + 1;
+
+    (* Add format string for error messages out of NC programs *)
+    fmtStr := CONCAT(fmtStr, '%d%s%s%d%d%d%d%s');
+  (*-------------------------------------------------------------------------*)
+  (*       HLI_RUMPF_TYP_NC_PROG_LR                                          *)
+  (*-------------------------------------------------------------------------*)
+  ELSIF BodyTypeEnum = HLI_RUMPF_TYP_NC_PROG_LR THEN
+    pLog^.EventConfigData.Id := XmlEventId_RumpfNcProgLR;
+
+    pRumpfNcProgLr := ADR(SatzR.rumpf.maske);
+
+    LogicalPathNr  := pRumpfNcProgLr^.log_pfad_nr;
+    ProgName       := pRumpfNcProgLr^.prog_name.zeichen;
+    FileName       := pRumpfNcProgLr^.file_name.zeichen;
+    NcBlockNr      := pRumpfNcProgLr^.satz_nr;
+    AddProgInfo    := pRumpfNcProgLr^.add_prog_info.zeichen;
+
+    paraPointerArray[paraIndex] := ADR(NcBlockNr);
+    paraIndex := paraIndex + 1;
+    paraPointerArray[paraIndex] := ADR(ProgName);
+    paraIndex := paraIndex + 1;
+    paraPointerArray[paraIndex] := ADR(FileName);
+    paraIndex := paraIndex + 1;
+    paraPointerArray[paraIndex] := ADR(LogicalPathNr);
+    paraIndex := paraIndex + 1;
+    paraPointerArray[paraIndex] := ADR(AddProgInfo);
+    paraIndex := paraIndex + 1;
+
+    fmtStr := CONCAT(fmtStr, '%d%s%s%d%s');
+  (*-------------------------------------------------------------------------*)
+  (*       HLI_RUMPF_TYP_MDS                                                 *)
+  (*-------------------------------------------------------------------------*)
+  ELSIF BodyTypeEnum = HLI_RUMPF_TYP_MDS THEN
+    pLog^.EventConfigData.Id := XmlEventId_RumpfMds;
+
+    pRumpfMds     := ADR(SatzR.rumpf.maske);
+
+    LogicalPathNr := pRumpfMds^.listen_typ;
+    ProgName      := pRumpfMds^.strukt_name.zeichen;
+
+    paraPointerArray[paraIndex] := ADR(LogicalPathNr);
+    paraIndex := paraIndex + 1;
+    paraPointerArray[paraIndex] := ADR(ProgName);
+    paraIndex := paraIndex + 1;
+
+    fmtStr := CONCAT(fmtStr, '%d%s');
+  (*-------------------------------------------------------------------------*)
+  (*       HLI_RUMPF_TYP_KOMMU                                               *)
+  (*-------------------------------------------------------------------------*)
+  ELSIF BodyTypeEnum = HLI_RUMPF_TYP_KOMMU THEN
+    pLog^.EventConfigData.Id := XmlEventId_RumpfKommu;
+
+    pRumpfKommu  := ADR(SatzR.rumpf.maske);
+
+    CommuMedium  := pRumpfKommu^.Medium;
+    CommuType    := pRumpfKommu^.Typ;
+    CommuPartner := pRumpfKommu^.Partner;
+
+    paraPointerArray[paraIndex] := ADR(CommuMedium);
+    paraIndex := paraIndex + 1;
+    paraPointerArray[paraIndex] := ADR(CommuType);
+    paraIndex := paraIndex + 1;
+    paraPointerArray[paraIndex] := ADR(CommuPartner);
+    paraIndex := paraIndex + 1;
+
+    fmtStr := CONCAT(fmtStr, '%d%d%d');
+  (*-------------------------------------------------------------------------*)
+  (*       HLI_RUMPF_TYP_RAMDISK                                             *)
+  (*-------------------------------------------------------------------------*)
+  ELSIF BodyTypeEnum = HLI_RUMPF_TYP_RAMDISK THEN
+    pLog^.EventConfigData.Id := XmlEventId_RumpfRamDisk;
+
+    pRumpfRamDisk := ADR(SatzR.rumpf.maske);
+
+    CommuMedium   := pRumpfRamDisk^.medium;
+    CommuType     := pRumpfRamDisk^.typ;
+    CommuPartner  := pRumpfRamDisk^.partner;
+    FileName      := pRumpfRamDisk^.file_name.zeichen;
+    FileOffset    := pRumpfRamDisk^.fileoffset;
+
+    paraPointerArray[paraIndex] := ADR(CommuMedium);
+    paraIndex := paraIndex + 1;
+    paraPointerArray[paraIndex] := ADR(CommuType);
+    paraIndex := paraIndex + 1;
+    paraPointerArray[paraIndex] := ADR(CommuPartner);
+    paraIndex := paraIndex + 1;
+    paraPointerArray[paraIndex] := ADR(FileName);
+    paraIndex := paraIndex + 1;
+    paraPointerArray[paraIndex] := ADR(FileOffset);
+    paraIndex := paraIndex + 1;
+
+    fmtStr := CONCAT(fmtStr, '%d%d%d%s%d');
+  (*-------------------------------------------------------------------------*)
+  (*       HLI_RUMPF_TYP_FILE                                                *)
+  (*-------------------------------------------------------------------------*)
+  ELSIF BodyTypeEnum = HLI_RUMPF_TYP_FILE THEN
+    pLog^.EventConfigData.Id := XmlEventId_RumpfFile;
+
+    pRumpfFile := ADR(SatzR.rumpf.maske);
+
+    FileName   := pRumpfFile^.file_name.zeichen;
+    FileOffset := pRumpfFile^.fileoffset;
+
+    paraPointerArray[paraIndex] := ADR(FileName);
+    paraIndex := paraIndex + 1;
+    paraPointerArray[paraIndex] := ADR(FileOffset);
+    paraIndex := paraIndex + 1;
+
+    fmtStr := CONCAT(fmtStr, '%s%d');
+  (*-------------------------------------------------------------------------*)
+  (*       HLI_RUMPF_TYP_INTPR_FILE                                          *)
+  (*-------------------------------------------------------------------------*)
+  ELSIF BodyTypeEnum = HLI_RUMPF_TYP_INTPR_FILE THEN
+    pLog^.EventConfigData.Id := XmlEventId_RumpfIntprFile;
+
+    pRumpfIntprFile := ADR(SatzR.rumpf.maske);
+
+    FileName   := pRumpfIntprFile^.file_name.zeichen;
+    FileOffset := pRumpfIntprFile^.fileoffset;
+    FileLine   := pRumpfIntprFile^.file_line_number;
+    ListType   := pRumpfIntprFile^.listen_typ;
+    StructName := pRumpfIntprFile^.strukt_name.zeichen;
+
+    paraPointerArray[paraIndex] := ADR(FileName);
+    paraIndex := paraIndex + 1;
+    paraPointerArray[paraIndex] := ADR(FileOffset);
+    paraIndex := paraIndex + 1;
+    paraPointerArray[paraIndex] := ADR(FileLine);
+    paraIndex := paraIndex + 1;
+    paraPointerArray[paraIndex] := ADR(ListType);
+    paraIndex := paraIndex + 1;
+    paraPointerArray[paraIndex] := ADR(StructName);
+    paraIndex := paraIndex + 1;
+
+    fmtStr := CONCAT(fmtStr, '%s%d%d%d%s');
+  (*-------------------------------------------------------------------------*)
+  (*       HLI_RUMPF_TYP_LISTE_BINAER                                        *)
+  (*-------------------------------------------------------------------------*)
+  ELSIF BodyTypeEnum = HLI_RUMPF_TYP_LISTE_BINAER THEN
+    pLog^.EventConfigData.Id := XmlEventId_RumpfListeBinaer;
+
+    pRumpfListeBinaer := ADR(SatzR.rumpf.maske);
+
+    StructName:=pRumpfListeBinaer^.strukt_name.zeichen;
+
+    paraPointerArray[paraIndex] := ADR(StructName);
+    paraIndex := paraIndex + 1;
+
+    fmtStr := CONCAT(fmtStr, '%s');
+  (*-------------------------------------------------------------------------*)
+  (*       HLI_RUMPF_TYP_GCM                                                 *)
+  (*-------------------------------------------------------------------------*)
+  ELSIF BodyTypeEnum = HLI_RUMPF_TYP_GCM THEN
+    pLog^.EventConfigData.Id := XmlEventId_RumpfGcm;
+
+    pRumpfGcm := ADR(SatzR.Rumpf.Maske);
+
+    ProgName:=pRumpfGcm^.Token.zeichen;
+    FileName:=pRumpfGcm^.FileName.zeichen;
+
+    paraPointerArray[paraIndex] := ADR(ProgName);
+    paraIndex := paraIndex + 1;
+    paraPointerArray[paraIndex] := ADR(FileName);
+    paraIndex := paraIndex + 1;
+
+    fmtStr := CONCAT(fmtStr, '%s%s');
+  END_IF
+
+  (*------------------------------------------------------------------------*)
+  (* Set values at input pins of FB                                         *)
+  (*------------------------------------------------------------------------*)
+  pLog^.EventDataAddress:= ADR(paraPointerArray);
+  pLog^.EventDataLength:= 0;
+  pLog^.fbCleanUp  := FALSE;
+  pLog^.EventQuit  := FALSE;
+
+  pLog^.EventConfigData.DataFormatStrAddress := ADR(fmtStr);
+
+  (*------------------------------------------------------------------------*)
+  (* report error message to event logger                                   *)
+  (*------------------------------------------------------------------------*)
+  pLog^(Event := TRUE);
+
+  (* Notify at output that a error essage occurred *)
+  Valid := TRUE;
+
+  (* Acknowledge error message *)
+ 	IF (bAxisErr) THEN
+		gpCh[0]^.mc_error.semaphor_rw := FALSE;
+		bAxisErr := FALSE;
+	ELSE	
+		pMcError^.semaphor_rw := FALSE;	  
+	END_IF
+ELSE
+  Valid := FALSE;
+END_IF
+
+(* by default : no error message is present, first search for error messages *)
+FOR i := 0 TO maxIdxEvents DO
+  (*-------------------------------------------------------------------------*)
+  (*       clear event                                                       *)
+  (*-------------------------------------------------------------------------*)
+  IF bToCleanup[i] THEN
+    pLog := ADR( LogEvent[i] );
+    pLog^();
+
+    IF pLog^.EventState=TCEVENTSTATE_SIGNALED THEN
+      pLog^( Event:=FALSE);
+    ELSIF pLog^.EventState=TCEVENTSTATE_RESET THEN
+      pLog^( EventQuit:= TRUE);
+    ELSIF pLog^.EventState=TCEVENTSTATE_CONFIRMED OR pLog^.EventState=TCEVENTSTATE_INVALID THEN
+      (*pLog^( FbCleanup:= TRUE); bugfix 12.7.2005*)
+      bUsed[i]     := FALSE;
+      bToCleanup[i] := FALSE;
+    END_IF;
+  (*-------------------------------------------------------------------------*)
+  (*       report event                                                      *)
+  (*-------------------------------------------------------------------------*)
+  ELSIF bUsed[i] THEN
+    pLog := ADR( LogEvent[i] );
+    pLog^();
+
+    (* IF pLog^.EventConfigData.bQuitRequired = FALSE THEN
+      FlankeQuit[i](CLK :=  pLog^.Quit);
+      IF FlankeQuit[i].Q = TRUE THEN
+        bUsed[i] := FALSE;
+        QuitCount := QuitCount + 1;
+      END_IF
+    END_IF*)
+  END_IF
+END_FOR
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

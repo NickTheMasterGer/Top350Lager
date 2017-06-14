@@ -1,0 +1,44 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="ReadBlockNumber" Id="{4014306c-8c06-48ce-b420-6d443610e815}">
+    <Declaration><![CDATA[FUNCTION_BLOCK ReadBlockNumber
+VAR_INPUT
+	nIdxGrp: UDINT;
+	bStart: BOOL;
+	pDest: POINTER TO DINT;
+END_VAR
+VAR_OUTPUT
+	Busy: BOOL;
+	bErr: BOOL;
+END_VAR
+VAR
+	fbRead: ADSREAD;
+	bStarted: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF bStarted = FALSE THEN
+   IF bStart = TRUE THEN
+      bStarted := TRUE;
+      bErr := FALSE;
+      Busy := TRUE;
+   END_IF
+END_IF
+
+IF bStarted THEN
+   (* raising edge of Timer triggers read request *)
+   fbRead( NetID := '', Port := 553, IdxGrp := nIdxGrp, IdxOffs := 16#0000000E,
+         LEN := 4, DestAddr := pDest, READ := bStarted, TMOUT := T#1s);
+   IF NOT fbRead.Busy THEN
+      (* There was an error in the execution of the read request *)
+      IF fbRead.Err THEN
+         bErr := TRUE;
+      END_IF
+      fbRead(READ := FALSE);    (* reset because of edge detection in FB ADSREAD *)
+      bStarted := FALSE;
+      Busy := FALSE;
+   END_IF
+END_IF]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

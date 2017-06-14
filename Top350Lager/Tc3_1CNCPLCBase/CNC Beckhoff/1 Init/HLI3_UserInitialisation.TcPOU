@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.38">
+  <POU Name="HLI3_UserInitialisation" Id="{3760070a-2646-490f-8384-b8ed4de0d32a}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION HLI3_UserInitialisation : BOOL
+VAR
+	idx: UDINT;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: HLI_UserInitialisation                            *)
+(* --------------------------------------------------------- *)
+(*   Desc:                                                   *)
+(* Author: MK                                                *)
+(*   Date: 18.07.2002                                        *)
+(*   Rev.: 1.0 												 *)
+(*         1.1 MiB 19.12.2012 Tc3 Anpassung                  *)
+(*         1.2 TV 30.06.2015  Function call SetChannelControl*)
+(*							  in a For Loop					 *)											  							  
+(* ========================================================= *)
+
+(* please do reset the plc program, if you change something in this module
+	or in modules are in the sublevel *)
+
+(* Axis Control *)	
+HLI3_SetAxisControlToPlc();	
+	
+FOR idx := 0 TO gNrch - 1 DO
+	HLI3_SetChannelControlToPlc(nChan:=UDINT_TO_INT(idx));
+END_FOR
+
+HLI3_UserInitialisation := TRUE;
+
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

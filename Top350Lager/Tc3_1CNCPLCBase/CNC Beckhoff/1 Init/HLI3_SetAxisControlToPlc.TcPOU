@@ -1,0 +1,56 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI3_SetAxisControlToPlc" Id="{5587e0c3-fc2c-4ae8-8768-64da10d00ca1}">
+    <Declaration><![CDATA[FUNCTION HLI3_SetAxisControlToPlc : BOOL
+VAR
+	idx: UDINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: HLI3_SetAxisControlToPlc                          *)
+(* --------------------------------------------------------- *)
+(*   Desc:                                                   *)
+(*   Author: MiB                                             *)
+(*   Date: 19.11.2012                                        *)
+(*   Rev.: 1.0                                               *)
+(* ========================================================= *)
+
+(* control to the plc *)
+FOR idx := 0 TO gNrAx - 1 DO
+
+	IF (idx < INT_TO_UDINT(HLI_SYS_AX_MAX)) THEN 
+		IF gpAx[idx] <> 0 THEN						// check for zero pointer
+			// PLC_Present for all axis
+			gpAx[idx]^.head.plc_present_w 								:= TRUE;
+		
+			(* declare axis for reference *)
+			gpAx[idx]^.lr_mc_control.reference_cam.enable_w 			:= TRUE;
+	
+			(* enable signals for real drives *)
+			gpAx[idx]^.lr_mc_control.torque_permission.enable_w			:= TRUE;
+			gpAx[idx]^.lr_mc_control.release_feedhold.enable_w 			:= TRUE;
+			gpAx[idx]^.lr_mc_control.drive_on.enable_w 					:= TRUE;
+			
+			(* set reference postion offset *)
+			gpAx[idx]^.lr_mc_control.set_reference_position.enable_w	:= TRUE;
+			gpAx[idx]^.lr_mc_control.refpos_position.enable_w			:= TRUE;
+			gpAx[idx]^.lr_mc_control.reference_cam.enable_w				:= TRUE;
+			
+			(* enable external commanding of an axis *)
+			gpAx[idx]^.lr_mc_control.add_cmd_values.enable_w 			:= TRUE;
+	
+			(* enable the axis to tracking operation (follow up) *)
+			gpAx[idx]^.lr_mc_control.follow_up.enable_w 				:= TRUE;
+		END_IF
+	END_IF
+END_FOR
+
+HLI3_SetAxisControlToPlc												:= TRUE;
+
+
+
+]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

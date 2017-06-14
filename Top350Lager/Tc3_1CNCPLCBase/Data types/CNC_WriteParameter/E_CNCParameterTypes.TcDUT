@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.36">
+  <DUT Name="E_CNCParameterTypes" Id="{1dac1c45-d0fd-4376-b6aa-7d11dcc1662a}">
+    <Declaration><![CDATA[TYPE E_CNCParameterTypes :
+(
+	CNC_ChannelParameter := 10,
+	CNC_AxisParameter := 11,
+	CNC_ZeroOffsets := 12,
+	CNC_ToolParameter := 13,
+	CNC_ClampPosition := 14
+);
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

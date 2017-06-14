@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4019.0">
+  <DUT Name="ST_ManualModeKeyHWUnit" Id="{34218d39-97f3-450d-9ca3-73082542f3ab}">
+    <Declaration><![CDATA[TYPE ST_ManualModeKeyHWUnit :
+STRUCT
+	nLogAxisId: UINT;
+	nChan: INT := -1;
+	nInputParameterIdx: INT;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

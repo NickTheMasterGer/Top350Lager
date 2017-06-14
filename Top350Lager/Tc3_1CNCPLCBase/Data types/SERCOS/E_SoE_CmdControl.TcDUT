@@ -1,0 +1,13 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="E_SoE_CmdControl" Id="{e332b687-3b8d-4836-ad85-8a04d1f14846}">
+    <Declaration><![CDATA[TYPE E_SoE_CmdControl :
+(
+	eSoE_CmdControl_Cancel := 0,
+	eSoE_CmdControl_Set := 1,
+	eSoE_CmdControl_SetAndEnable := 3
+);
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

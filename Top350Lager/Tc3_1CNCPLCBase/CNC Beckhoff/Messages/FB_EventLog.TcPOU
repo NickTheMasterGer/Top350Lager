@@ -1,0 +1,87 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="FB_EventLog" Id="{da36b043-54ec-4ef5-aae3-1b59f96212d1}">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_EventLog
+VAR_INPUT
+	bEvent: BOOL;
+	bEventQuit: BOOL;
+	bReset: BOOL;
+	eLogMethod: E_LogMethod := Static;
+	nSourceId: UDINT;
+	nEventId: UDINT;
+	nEventDataAddr: UDINT;
+	nEventDataSize: UDINT;
+	sFormat: STRING;
+END_VAR
+VAR_OUTPUT
+	nEventState: UDINT;
+	bEventActive: BOOL;
+	bError: BOOL;
+	nErrorId: UDINT;
+END_VAR
+VAR
+	bEventInternal: BOOL;
+	bEventActiveInternal: BOOL;
+	fbFtrigEvent: F_TRIG;
+	fbRtrigEvent: R_TRIG;
+	fbRtrigEventInternal: R_TRIG;
+	stEventData: TcEvent;
+	fbEventLogger: ADSLOGEVENT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(******************************************************************************)
+(* 								 Konfiguration des Events									*)
+(******************************************************************************)
+stEventData.Flags 					:= TCEVENTFLAG_LOG OR TCEVENTFLAG_SRCID OR TCEVENTFLAG_FMTSELF OR 16#1000;
+stEventData.StreamType				:= TCEVENTSTREAM_SIMPLE;
+stEventData.ProgId 					:= 'TcEventFormatter.TcXmlFormatter';
+stEventData.Id 						:= nEventId;
+stEventData.SourceId 				:= nSourceId;
+stEventData.DataFormatStrAddress	:= ADR(sFormat);
+stEventData.bQuitRequired 			:= TRUE;
+
+(******************************************************************************)
+(* 					Interne Bildung des eventausloesenden Signals					*)
+(******************************************************************************)
+fbFtrigEvent
+	(CLK := bEvent);
+
+fbRtrigEvent
+	(CLK := bEvent);
+
+bEventInternal	:= (bEvent AND (eLogMethod = Static)) OR
+					   (fbFtrigEvent.Q AND (eLogMethod = FallingTrig)) OR
+					   (fbRtrigEvent.Q AND (eLogMethod = RisingTrig));
+
+fbRtrigEventInternal
+	(CLK := bEventInternal);
+
+IF fbRtrigEventInternal.Q THEN
+	bEventActiveInternal	:= TRUE;
+ELSIF (fbEventLogger.EventState > 0) THEN
+	bEventActiveInternal	:= FALSE;
+END_IF
+
+(******************************************************************************)
+(* 							  Uebergabe an den Eventlogger								*)
+(******************************************************************************)
+fbEventLogger
+	(NETID						:= '',
+	 PORT						:= 110,
+	 Event						:= bEventInternal,
+	 EventQuit					:= bEventQuit,
+	 EventConfigData			:= stEventData,
+	 EventDataAddress			:= nEventDataAddr,
+	 EventDataLength			:= nEventDataSize,
+	 FbCleanup 					:= bReset,
+	 TMOUT						:= t#2s,
+	 EventState					=> nEventState,
+	 Err						=> bError,
+	 ErrId						=> nErrorId
+	);
+
+bEventActive					:= (fbEventLogger.EventState > 0) OR bEventActiveInternal;]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

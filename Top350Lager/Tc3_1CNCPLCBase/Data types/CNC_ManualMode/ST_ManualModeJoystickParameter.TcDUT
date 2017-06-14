@@ -1,0 +1,16 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.20">
+  <DUT Name="ST_ManualModeJoystickParameter" Id="{82245928-ed11-4a08-ac6b-3b0a33c29e82}">
+    <Declaration><![CDATA[TYPE ST_ManualModeJoystickParameter :
+STRUCT
+	/// static signal : Analog Min Value 
+	AnalogValueMin: DINT;
+	/// static signal : Analog Max Value 
+	AnalogValueMax: DINT;
+	/// Dead Band for Zero Value 
+	AnalogValueZeroDeadBand: DINT;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4018.5">
+  <POU Name="HLI3_FindHliAxisIdx" Id="{7aa33349-5577-41f0-8d51-fe242c595c7e}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION HLI3_FindHliAxisIdx : DINT
+VAR_INPUT
+	nLogAxisNo		: UDINT;	
+END_VAR
+VAR
+	i				: UINT;	
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF nLogAxisNo > MAX_SYS_LOG_AXIS_INDEX OR nLogAxisNo < 1 THEN 
+	HLI3_FindHliAxisIdx := -1;
+ELSE
+	HLI3_FindHliAxisIdx := CNCSystem.LogAxisNo[nLogAxisNo].nHliAxisIdx;	
+END_IF
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

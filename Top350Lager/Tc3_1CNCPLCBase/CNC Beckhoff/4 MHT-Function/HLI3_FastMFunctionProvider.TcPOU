@@ -1,0 +1,144 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.36">
+  <POU Name="HLI3_FastMFunctionProvider" Id="{95ed0903-f453-473f-a95c-66a484bd83e9}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK HLI3_FastMFunctionProvider
+VAR_INPUT
+	nHliChanIdx				: UINT;													(* HLI channel index of the channel to check for new M functions *)
+	anMFunctionNo			: ARRAY[0..MAX_FAST_M_FUNC_ITEM_IDX] OF UINT;			(* List of M functions munbers to handle *)
+END_VAR
+VAR_OUTPUT
+	stData					: ST_FastMFunctionData;									(* Output structure containing informatione about the handled M functions and their execution offsets *)
+	bUnknownChannelIndex	: BOOL;													(* TRUE if the given nHliChanIdx is unknown *)
+END_VAR
+VAR
+	bExitAll				: BOOL;
+	bFirstCycle				: BOOL := TRUE;
+	byTaskIndex				: BYTE;
+	nConfiguredFunctions	: UINT;
+	nFunctionCount			: UINT;
+	nLoop1					: UINT;
+	nLoop2					: UINT;
+	anMFunctionNoOld		: ARRAY[0..MAX_FAST_M_FUNC_ITEM_IDX] OF UINT;
+	pChan					: POINTER TO HIGH_LEVEL_INTERFACE_CH;
+	pData					: POINTER TO ST_FastMFunctionItem;
+	pTechno					: POINTER TO Techno_Unit_Ch;
+	pMHTechno				: POINTER TO HLI_M_H_Prozess;
+	
+	fbGetTaskIndex			: Tc2_System.GETCURTASKINDEX;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(****************************************************************************************)
+(* POU:		HLI3_FastMFunctionProvider                     								*)
+(* Type:	FB																			*)
+(* Author: 	RCH		                                             						*)
+(* Date: 	14/10/29																	*)
+(* Rev.: 	1.0                                               							*)
+(* ------------------------------------------------------------------------------------ *)
+(* Desc.:	FB for handling CNC M functions contained in the input array				*)
+(*			'anMFunctionNo'. These M functions have to be configured as MOS_TS. Their	*)
+(*			metadata will be copied into the output structure 'stData' to be processed	*)
+(*			by instances of the FB HLI3_FastMFunctionHandler!							*)				
+(*																						*)
+(*			THIS FB HAS TO BE CALLED CYCLICALLY IN A 1MS TASK!!!						*)
+(* ------------------------------------------------------------------------------------ *)
+(* Rev.:	1.1																			*)
+(* Date:	15/05/05								                                   	*)
+(* Author:	RCH																		 	*)
+(* Desc.:	Fixed issues occured if more than 1 MOS_TS M function was programmed in a   *)
+(*			single G-Code block.														*)
+(* ------------------------------------------------------------------------------------ *)
+(* Rev.:	<Enter revision number here>												*)
+(* Date:	<Enter revision data here>				                                   	*)
+(* Author:	<Enter author´s shortcut here>											 	*)
+(* Desc.:	<Enter description here>													*)
+(****************************************************************************************)
+
+(****************************************************************************************)
+(*	  Read current (PLC) task id and check whether the cycle time has been exceeded		*)
+(****************************************************************************************)
+IF bFirstCycle THEN
+	fbGetTaskIndex
+		(index				=> byTaskIndex);
+END_IF
+
+(****************************************************************************************)
+(*								Initialize output structure								*)
+(****************************************************************************************)
+Tc2_System.MEMSET(ADR(stData), 16#00, SIZEOF(stData));
+
+stData.bCycleTimeExceeded	:= TwinCAT_SystemInfoVarList._TaskInfo[byTaskIndex].CycleTimeExceeded;
+stData.bDataValid			:= FALSE;
+stData.nFunctionCount		:= 0;	
+
+(****************************************************************************************)
+(*	  					  Check existence of the given channel index					*)
+(****************************************************************************************)
+IF NOT HLI3_CheckChannelValid(nChannel := nHliChanIdx) THEN
+	bUnknownChannelIndex	:=	TRUE; 
+	RETURN;
+ELSE
+	bUnknownChannelIndex	:=	FALSE;
+END_IF
+
+(****************************************************************************************)
+(*	  				  Determine the number of configured M functions					*)
+(****************************************************************************************)
+IF (Tc2_System.MEMCMP(ADR(anMFunctionNo), ADR(anMFunctionNoOld), SIZEOF(anMFunctionNo)) <> 0) THEN
+	anMFunctionNoOld				:= anMFunctionNo;
+	nConfiguredFunctions			:= 0;
+	
+	FOR nLoop1 := 0 TO MAX_FAST_M_FUNC_ITEM_IDX DO
+		IF (anMFunctionNoOld[nLoop1] > 0) THEN
+			nConfiguredFunctions	:= nConfiguredFunctions + 1;
+		END_IF
+	END_FOR
+END_IF
+
+(****************************************************************************************)
+(*	  					  	Check occurances of M functions								*)
+(****************************************************************************************)
+stData.bDataValid					:= TRUE;
+bFirstCycle							:= FALSE;
+
+IF (gpCh[nHliChanIdx]^.used_units_std_sync_r = 0) THEN
+	RETURN;
+END_IF
+
+pChan								:= gpCh[nHliChanIdx];
+nFunctionCount						:= 0;
+nLoop1 								:= 0;
+
+FOR nLoop1 := 0 TO INT_TO_UINT(HLI_TU_CH_STD_SYNC_MAXIDX) DO
+	IF pChan^.techno_unit_std_sync[nLoop1].please_rw AND (pChan^.techno_unit_std_sync[nLoop1].fkt_ctrl_r = Tc2_CncHli.HLI_INTF_M_FKT) THEN
+		pTechno						:= ADR(pChan^.techno_unit_std_sync[nLoop1]);
+		pMHTechno					:= ADR(pTechno^.attribut_r);	
+		
+		(* Check whether this FB has to handle the current M function *)
+		FOR nLoop2 := 0 TO (nConfiguredFunctions - 1) DO
+			IF (pMHTechno^.nr = anMFunctionNo[nLoop2]) THEN
+				pData				:= ADR(stData.astItem[nFunctionCount]);
+				pData^.nFunctionNo	:= anMFunctionNo[nLoop2];
+				pData^.nOffset		:= pMHTechno^.zeit;
+				pData^.nCycleCount	:= TwinCAT_SystemInfoVarList._TaskInfo[byTaskIndex].CycleCount;
+				
+				nFunctionCount		:= nFunctionCount + 1;
+				
+				pTechno^.please_rw	:= FALSE;
+				pTechno^.done_w		:= TRUE;		
+				EXIT;	
+			END_IF					
+		END_FOR
+		
+		IF (nFunctionCount >= nConfiguredFunctions) THEN
+			EXIT;
+		END_IF
+	ELSIF NOT pChan^.techno_unit_std_sync[nLoop1].please_rw THEN
+		EXIT;
+	END_IF	
+END_FOR
+
+stData.nFunctionCount				:= nFunctionCount;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

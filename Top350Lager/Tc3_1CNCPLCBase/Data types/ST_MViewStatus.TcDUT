@@ -1,0 +1,12 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="ST_MViewStatus" Id="{0ea1ab3a-aea4-4c99-a8d5-8256b0c3e81e}">
+    <Declaration><![CDATA[TYPE ST_MViewStatus :
+STRUCT
+	Color: ARRAY[1..MV_NUMBER_OF_ROWS] OF INT;
+	Description: ARRAY[1..MV_NUMBER_OF_ROWS] OF STRING(80);
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

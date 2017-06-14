@@ -1,0 +1,30 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI3_GetChannelState" Id="{28159ab0-70f0-444c-9e7d-20b75ec09b98}">
+    <Declaration><![CDATA[FUNCTION HLI3_GetChannelState : UDINT
+VAR_INPUT
+	/// Number of channel 
+	nChanIdx: INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: HLI3_GetChannelState                              *)
+(* --------------------------------------------------------- *)
+(*   Desc:                                                   *)
+(* Author: MK                                                *)
+(*   Date: 18.07.2002                                        *)
+(*   Rev.: 1.0                                               *)
+(* ========================================================= *)
+
+HLI3_GetChannelState := 0;
+IF NOT HLI3_CheckChannelValid(nChannel := nChanIdx) THEN
+	RETURN;
+END_IF
+
+(* if the stop button from the HMI is selected the request is set *)
+HLI3_GetChannelState := gpCh[nChanIdx]^.channel_mc_control.mode_and_state.state_r.state;
+]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

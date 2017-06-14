@@ -1,0 +1,14 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="ST_PortAddr" Id="{106ca540-3e57-4a8d-87c2-41c4bb271623}">
+    <Declaration><![CDATA[TYPE ST_PortAddr :
+STRUCT
+	portA: UINT;
+	portB: UINT;
+	portC: UINT;
+	portD: UINT;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

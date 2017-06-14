@@ -1,0 +1,33 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI3_ChannelSetFeedHold" Id="{dff122ce-4dca-4ab9-8b1a-9351d1f31326}">
+    <Declaration><![CDATA[FUNCTION HLI3_ChannelSetFeedHold : BOOL
+VAR_INPUT
+	/// Number of channel 
+	nChanIdx: INT;
+	bFeedHold: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: HLI_ChannelSetFeedHold                            *)
+(* --------------------------------------------------------- *)
+(*   Desc:                                                   *)
+(* Author: MK , MiB                                          *)
+(*   Date: 20.11.2012                                        *)
+(*   Rev.: 1.1                                               *)
+(* ========================================================= *)
+
+HLI3_ChannelSetFeedHold := FALSE;
+IF NOT HLI3_CheckChannelValid(nChannel := nChanIdx) THEN
+	RETURN;
+END_IF
+
+(* if the stop button from the HMI is selected the request is set *)
+gpCh[nChanIdx]^.bahn_mc_control.feedhold.command_w := bFeedHold OR gpCh[nChanIdx]^.bahn_mc_control.feedhold.request_r;
+HLI3_ChannelSetFeedHold := TRUE;
+
+]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

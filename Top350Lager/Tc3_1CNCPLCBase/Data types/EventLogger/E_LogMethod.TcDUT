@@ -1,0 +1,13 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="E_LogMethod" Id="{b2afc65d-5b77-49f2-a298-9849555dd177}">
+    <Declaration><![CDATA[TYPE E_LogMethod :
+(
+	Static := 0,
+	RisingTrig := 1,
+	FallingTrig := 2
+);
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

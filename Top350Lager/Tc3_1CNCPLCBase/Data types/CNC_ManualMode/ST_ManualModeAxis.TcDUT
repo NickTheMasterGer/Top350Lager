@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4019.0">
+  <DUT Name="ST_ManualModeAxis" Id="{33eabdaf-8878-4814-83bd-d8b9de4885fd}">
+    <Declaration><![CDATA[TYPE ST_ManualModeAxis :
+STRUCT
+	nLogAxisNr: UINT;
+	nSpeed: UDINT;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

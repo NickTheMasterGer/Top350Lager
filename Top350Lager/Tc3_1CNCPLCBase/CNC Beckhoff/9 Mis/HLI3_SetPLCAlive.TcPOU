@@ -1,0 +1,30 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.20">
+  <POU Name="HLI3_SetPLCAlive" Id="{ab3b63e7-eefd-4495-aac9-e4507aa91e0f}">
+    <Declaration><![CDATA[FUNCTION HLI3_SetPLCAlive : BOOL
+VAR_INPUT
+	nChanIdx: INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*
+Display PLC is just alive (Trigger Watchdog to MC)
+If PLC is stopped here, alive sign is missing.
+-> CNC raises error message
+-> CNC stoppes movement with internal FEEDHOLD
+-> system has to be restarted (after removal of error)
+*)
+
+HLI3_SetPLCAlive := FALSE;
+IF NOT HLI3_CheckChannelValid(nChannel := nChanIdx) THEN
+	RETURN;
+END_IF
+
+gpCh[nChanIdx]^.head.mc_watchdog.enable_w := TRUE;
+gpCh[nChanIdx]^.head.mc_watchdog.alive_rw := TRUE;
+
+HLI3_SetPLCAlive := TRUE;
+]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

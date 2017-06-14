@@ -1,0 +1,37 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.20">
+  <POU Name="HLI3_ChannelSetProgramBlockIgnore" Id="{d548f34b-0684-4706-9240-a526c321fa7b}">
+    <Declaration><![CDATA[FUNCTION HLI3_ChannelSetProgramBlockIgnore : BOOL
+VAR_INPUT
+	/// Number of channel 
+	nChanIdx: INT;
+	bPrgBlockIgnore: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: HLI_SetProgramBlockIgnore                         *)
+(* --------------------------------------------------------- *)
+(*   Desc:                                                   *)
+(* Author: MK, MiB , TV                                      *)
+(*   Date: 20.12.2012                                        *)
+(*   Last: 19.11.2013                                        *)
+(*   Rev.: 1.0                                               *)
+(* ========================================================= *)
+
+HLI3_ChannelSetProgramBlockIgnore := FALSE;
+IF NOT HLI3_CheckChannelValid(nChannel := nChanIdx) THEN
+	RETURN;
+END_IF
+
+(* program block ignore *)
+IF bPrgBlockIgnore THEN
+	gpCh[nChanIdx]^.decoder_mc_control.program_block_ignore.command_w := 1;
+ELSE
+	gpCh[nChanIdx]^.decoder_mc_control.program_block_ignore.command_w := 0;
+END_IF
+
+HLI3_ChannelSetProgramBlockIgnore := TRUE;]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

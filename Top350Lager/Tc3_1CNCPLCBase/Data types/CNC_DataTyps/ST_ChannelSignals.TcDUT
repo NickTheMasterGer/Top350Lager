@@ -1,0 +1,16 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="ST_ChannelSignals" Id="{180df827-2bd7-4b30-91c1-bd5c132fa525}">
+    <Declaration><![CDATA[TYPE ST_ChannelSignals :
+STRUCT
+	DoSingleBlock: BOOL;
+	SingleBlock: BOOL;
+	FeedHold: BOOL;
+	Backward: BOOL;
+	PrgBlockIgnore: BOOL;
+	M01Stop: BOOL;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

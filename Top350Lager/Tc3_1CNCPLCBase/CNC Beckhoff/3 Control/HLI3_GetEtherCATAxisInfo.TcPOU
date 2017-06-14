@@ -1,0 +1,45 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI3_GetEtherCATAxisInfo" Id="{425a0fc0-f7bc-4c67-b4b3-e49b2a7580d0}">
+    <Declaration><![CDATA[FUNCTION HLI3_GetEtherCATAxisInfo : ST_DriveRef
+VAR
+	arrTemp: ARRAY[1..24] OF BYTE;
+	arrNetIdAchse2: ARRAY[0..MAX_STRING_LENGTH] OF BYTE;
+	i: INT;
+	id: DINT;
+	nCha: UINT;
+	nPort: UINT;
+END_VAR
+VAR_INPUT
+	nHliAxisIdx: INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: HLI_GetEtherCATAxisInfo                   		 *)
+(* --------------------------------------------------------- *)
+(*   Desc: Gets the information about a SoE Drive (Ax5000)   *)
+(*  benötigt: TcEtherCAT.lib   *)
+(* Return: Structure with the information for the drive     *)
+(* Author: MiB                                               *)
+(*   Date: 20.11.2012                                        *)
+(*   Rev.: 1.2                                               *)
+(* ========================================================= *)
+
+
+IF NOT HLI3_CheckAxisValid(nHliAxisIdx := nHliAxisIdx) THEN
+	HLI3_GetEtherCATAxisInfo.sNetId := '';
+	HLI3_GetEtherCATAxisInfo.nDriveNo := 0;
+	HLI3_GetEtherCATAxisInfo.nSlaveAddr := 0;
+	RETURN;	
+END_IF
+
+
+HLI3_GetEtherCATAxisInfo.sNetId := gpAx[nHliAxisIdx]^.lr_state.twincat_box.ads_netid_r;
+HLI3_GetEtherCATAxisInfo.nDriveNo := UINT_TO_BYTE(gpAx[nHliAxisIdx]^.lr_state.twincat_box.channel_r);
+HLI3_GetEtherCATAxisInfo.nSlaveAddr :=gpAx[nHliAxisIdx]^.lr_state.twincat_box.ads_port_r;
+
+RETURN;]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

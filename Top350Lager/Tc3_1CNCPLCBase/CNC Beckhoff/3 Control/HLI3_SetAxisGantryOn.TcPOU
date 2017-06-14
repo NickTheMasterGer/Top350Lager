@@ -1,0 +1,39 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI3_SetAxisGantryOn" Id="{751bd63e-5062-4885-abf8-5cb03f673379}">
+    <Declaration><![CDATA[FUNCTION HLI3_SetAxisGantryOn : BOOL
+VAR_INPUT
+	nHliAxisIdx: INT;
+	bEnable: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(****************************************************************************************)
+(* POU:		HLI_SetAxisGantryOn                      									*)
+(* Type:	Function																	*)
+(* Author: 	HR																			*)
+(* Date: 	11/01/24																	*)
+(* Rev.: 	1.0																			*)
+(* ------------------------------------------------------------------------------------ *)
+(* Desc:	Enables the axis specific control unit for driving out the gantry			*)
+(*			difference. The actual movement is triggered by the input 'bEnable'.		*)
+(*			The current axis has to be a gantry slave. That means:						*)
+(*				+ It is not attached to a channel										*)
+(*				+ kenngr.achs_mode		0x2000n		(where n specifies the axis type)	*)
+(*				+ kenngr.gantry_ax_nr	1			(e. g. axis no. of gantry master)	*)
+(*				+ kenngr.gantry_offset  10000		(e. g. difference to be driven out)	*)
+(*				+ kenngr.gantry_vb_korr	20000		(e. g. velocity for driving out)	*)
+(****************************************************************************************)
+
+(* Check specified logical axis no first *)
+IF NOT HLI3_CheckAxisValid(nHliAxisIdx := nHliAxisIdx) THEN
+	HLI3_SetAxisGantryOn := FALSE;
+	RETURN;
+END_IF
+
+gpAx[nHliAxisIdx]^.lr_mc_control.gantry_on.enable_w	:= TRUE;
+gpAx[nHliAxisIdx]^.lr_mc_control.gantry_on.command_w	:= bEnable;
+HLI3_SetAxisGantryOn	:= TRUE;]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

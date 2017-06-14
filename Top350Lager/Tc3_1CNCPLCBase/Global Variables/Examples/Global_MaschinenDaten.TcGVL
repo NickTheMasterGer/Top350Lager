@@ -1,0 +1,76 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4018.5">
+  <GVL Name="Global_MaschinenDaten" Id="{58809fbd-678d-413e-a5af-524e02b1a0bd}">
+    <Declaration><![CDATA[VAR_GLOBAL CONSTANT
+	MAX_TOOLS: INT := 20;
+	MAX_WKZLIMITS: INT := 25;
+	MAX_TIMER: INT := 50;
+	/// BDE - Meldungen 
+	BDE_MSG_1: INT := 1;
+	BDE_MSG_2: INT := 2;
+	BDE_MSG_3: INT := 3;
+	/// BDE - Timer 
+	BDE_TIMER_SUMME: INT := 1;
+	BDE_TIMER_STEUERUNGEIN: INT := 2;
+	BDE_TIMER_AUTOMATIK: INT := 3;
+	BDE_TIMER_STOERUNG: INT := 4;
+	/// BDE - Counter 
+	BDE_COUNTER_AUTO: INT := 1;
+	BDE_COUNTER_STUECKZAHL: INT := 2;
+	/// Allgemeine Maschinendaten Offsets 
+	MASCH_GRUNDPOS_ACHSE_X: INT := 1;
+	MASCH_GRUNDPOS_ACHSE_Y: INT := 2;
+	MASCH_GRUNDPOS_ACHSE_Z: INT := 3;
+	MASCH_GRUNDPOS_ACHSE_L: INT := 4;
+	MASCH_GRUNDPOS_ACHSE_o: INT := 4;
+END_VAR
+
+VAR_GLOBAL
+
+	///@1:Maschinendaten
+	MachData: ST_MachData;  
+
+	bStartWriteFromHMI: BOOL;
+	bWriteReadyFromHMI: BOOL;
+	bReadFromPlc: BOOL;
+	sFileName: STRING(255);
+	///--------------------------
+	///	Maschinendatentabellen  
+	///--------------------------
+	PLCMParList1: ARRAY[1..101] OF LREAL;
+	PLCMParList2: ARRAY[1..101] OF LREAL;
+	PLCMParList3: ARRAY[1..50] OF LREAL;
+	/// Tooldata 
+	WkzWechslerPos1: ARRAY[1..41] OF LREAL;
+	/// position in tool changer in the order x1,y1,z1a,z1b,x2,y2,z2a,z2b.... 
+	WkzWechslerPos2: ARRAY[1..41] OF LREAL;
+	/// position in tool changer in the order x1,y1,z1a,z1b,x2,y2,z2a,z2b.... 
+	WkzWechslerPos3: ARRAY[1..41] OF LREAL;
+	aktTool: ST_CNC_TOOL_DATA_EXT;
+	oldTool: ST_CNC_TOOL_DATA_EXT;
+	/// ID of requested Tool Data 
+	nToolRequestID: DINT;
+	/// Sister ID of requested Tool Data, ignored if 0
+	nToolRequestIDSister: DINT;
+	/// with rising edge -> start transfer HMI -> PLC (aktTool), falling edge -> HMI reports done 
+	bToolData: BOOL;
+	/// with rising edge -> data is transfered PLC -> HMI, falling edge -> HMI reports done 
+	bOldToolData: BOOL;
+	/// Timer 
+	PLCTimer: ARRAY[1..MAX_TIMER] OF REAL;
+	/// Geschwindigkeiten 
+	GeschwLeer: ARRAY[1..10] OF REAL;
+	GeschwLast: ARRAY[1..10] OF REAL;
+	/// Allgemeine Maschinendaten 
+	MaschParam: ARRAY[1..50] OF REAL;
+	TestBol: ARRAY[1..50] OF BOOL;
+	/// HMi -> PLC set to true, after writing all Maschpara 
+	bWriteToPlc: BOOL;
+	/// aktual Tool ID of tool in CNC 
+	nToolInCnc: DINT;
+	nToolInCncSister: DINT;
+	VE_Tool: UINT;
+	dwtest: DWORD;
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

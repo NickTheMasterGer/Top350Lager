@@ -1,0 +1,76 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4019.0">
+  <POU Name="HLI3_SetChannelControlToPlc" Id="{592622f2-0537-4280-b19a-633cf598fccc}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION HLI3_SetChannelControlToPlc : BOOL
+VAR_INPUT
+	nChan: INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: HLI3_SetChannelControlToPlc                       *)
+(* --------------------------------------------------------- *)
+(*   Desc:                                                   *)
+(* Author: MK                                                *)
+(*   Date: 18.07.2002                                        *)
+(*   Rev.: 1.0                                               *)
+(*   Date: 19.11.2012                                        *)
+(*   Rev.: 1.1 MiB TC3 0 based index                         *)
+(* ========================================================= *)
+
+
+IF (NOT HLI3_CheckChannelValid(nChannel := nCHan)) THEN
+	HLI3_SetChannelControlToPlc											:= FALSE;
+	RETURN; (* A b b r u c h *)
+END_IF
+
+
+(* PLC_Present for the channel *)
+gpCh[nChan]^.head.plc_present_w 									:= TRUE;
+
+(* reset *)
+gpCh[nChan]^.bahn_lc_control.plc_reset.enable_w 					:= TRUE;
+gpCh[nChan]^.channel_mc_control.mode_and_state.enable_w				:= TRUE;
+
+(* override *)
+gpCh[nChan]^.bahn_mc_control.override_feedrate.enable_w 			:= TRUE;
+
+(* FeedHold *)
+gpCh[nChan]^.bahn_mc_control.feedhold.enable_w 					:= TRUE;
+
+(* Single Step *)
+gpCh[nChan]^.bahn_mc_control.single_block.enable_w 				:= TRUE;
+
+(* BackwardMotion *)
+gpCh[nChan]^.bahn_mc_control.backward_motion.enable_w 			:= TRUE;
+
+(* ReducedFeed *)
+gpCh[nChan]^.bahn_mc_control.reduced_speed.enable_w 				:= TRUE;
+
+(* Handwheel *)
+gpCh[nChan]^.hb_mc_control.handwheel_incs[0].enable_w 			:= TRUE;
+
+(* Channel switch "jog of path" *)
+gpCh[nChan]^.bahn_mc_control.suspend_axis_output.enable_w 		:= TRUE;
+
+(* logon for error messages *)
+gpCh[nChan]^.mc_error.enable_w 									:= TRUE;
+
+(* program block ignore *)
+gpCh[nChan]^.decoder_mc_control.program_block_ignore.enable_w	:= TRUE;
+
+(* Syntax Check *)
+gpCh[nChan]^.decoder_mc_control.execution_mode.enable_w			:= TRUE;
+
+(* Optional stop M01 *)
+gpCh[nChan]^.bahn_mc_control.m01_stop_enable.enable_w			:= TRUE;
+
+(* Emergency Stop *)
+gpCh[nChan]^.bahn_mc_control.emergency_stop.enable_w				:= TRUE;
+
+HLI3_SetChannelControlToPlc 												:= TRUE;
+
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

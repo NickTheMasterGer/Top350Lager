@@ -1,0 +1,102 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4018.5">
+  <POU Name="PRG_AxesHandler" Id="{09e86179-f0c7-4e63-9c4c-17d3691b5ccb}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM PRG_AxesHandler
+VAR
+	nHliAxisIdx					: INT;		
+	fbSetAxisRelease			: ARRAY[0..HLI_SYS_AX_MAXIDX] OF HLI3_SetAxisRelease;
+	
+	nFirstSpindle				: INT := -1;
+	fbHandleSpindleTechno		: HLI3_HandleSpindleTechnoGearChange;
+	M3,M4,M5,M19				: BOOL;
+	MDummy						: BOOL;
+	M40, M41, M42, M43, M44, M45: BOOL;
+	(*
+	fbHandleSpindleTechnoPlcSp	: HLI3_HandleSpindleTechno;
+	SM3,SM4,SM5,SM19			: bool; 
+	*)
+END_VAR
+
+
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(****************************************************************************************)
+(* POU:		PRG_AxesHandler                     										*)
+(* Type:	PRG																			*)
+(* Author: 	TV,MiB                                             							*)
+(* Date: 	03.02.14																	*)
+(* Rev.: 	1.1                                               							*)
+(* ------------------------------------------------------------------------------------ *)
+(* Desc:	Description																	*)
+(****************************************************************************************)
+
+(****************************************************************************************)
+(*							Release of all reachable axes								*)
+(****************************************************************************************)
+FOR nHliAxisIdx := 0 TO HLI_SYS_AX_MAXIDX DO
+	fbSetAxisRelease[nHliAxisIdx](
+		bEnable:= PLCAxisEnable, 
+		nHliAxisIdx:= nHliAxisIdx);	
+		IF HLI3_CheckAxisValid(nHliAxisIdx) THEN
+			IF nFirstSpindle = -1 AND gpAx[nHliAxisIdx]^.ipo_state.spindle_axis_r THEN  (* store HLIIndex of first spindle *)
+				nFirstSpindle := nHliAxisIdx;
+			END_IF
+		END_IF
+END_FOR
+
+
+
+(* if there exits spindles use the first one for spindleoverride *)
+IF nFirstSpindle <> -1 THEN
+	HLI3_SetAxisOverride(nHliAxisIdx:= nFirstSpindle , nOverride:= PLCSpindleOverride *10);
+
+	fbHandleSpindleTechno(
+		nHliAxisIdx:=nFirstSpindle , 		
+		bIsChannelSpecific:= FALSE, 
+		nRevolution=> , 
+		nPosition=> , 
+		bError=> , 
+		nErrorId=> , 
+		M03:= M3, 
+		M04:= M4, 
+		M05:= M5, 
+		M19:= M19,
+		M40 := M40,
+		M41 := M41,
+		M42 := M42,
+		M43 := M43,
+		M44 := M44,
+		M45 := M45,
+		); 
+	(* acknowledge all spindle M funnctions immediately *)
+	M3 := FALSE;  
+	M4 := FALSE;
+	M5 := FALSE;
+	M19 := FALSE;
+END_IF
+
+
+
+(* Howto use plc controlled spindle : *)
+(*
+fbHandleSpindleTechnoPlcSp(
+	nHliAxisIdx:= 0 , 
+	nHliChannelIdx:= 0 , 
+	bIsChannelSpecific:= TRUE, 
+	nLogAxisNoChannelSpecific:= 95 , 
+	bHandleGearChange:= FALSE , 
+	bChannelReset:= FALSE, 
+	nRevolution=> , 
+	nPosition=> , 
+	bError=> , 
+	nErrorId=> , 
+	M03:= SM3, 
+	M04:= SM4, 
+	M05:= SM5, 
+	M19:= SM19);
+*)
+
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

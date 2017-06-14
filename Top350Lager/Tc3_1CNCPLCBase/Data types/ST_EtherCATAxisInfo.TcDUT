@@ -1,0 +1,15 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="ST_EtherCATAxisInfo" Id="{b8341d34-cdab-4633-97bd-34cd4255428d}">
+    <Declaration><![CDATA[TYPE ST_EtherCATAxisInfo :
+STRUCT
+	NetId: STRING(MAX_STRING_LENGTH);
+	id: DINT;
+	nCha: UINT;
+	nPort: UINT;
+	stDriveRef: ST_SoE_DriveRef;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

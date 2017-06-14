@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.36">
+  <DUT Name="ST_CNCParameter" Id="{abc9cc6f-07a9-4090-b339-e0f4930f2c0a}">
+    <Declaration><![CDATA[TYPE ST_CNCParameter :
+STRUCT
+	strName: STRING;
+	strValue: STRING;
+	strDescription: STRING;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

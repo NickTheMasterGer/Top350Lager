@@ -1,0 +1,47 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI3_ChannelReset" Id="{367accb4-812a-4d62-b3f3-b000c5327b3f}">
+    <Declaration><![CDATA[FUNCTION HLI3_ChannelReset : BOOL
+VAR_INPUT
+	/// Channel index 
+	nChanIdx: INT;
+END_VAR
+VAR
+	/// local pointer to Data of actual Channel 
+	pChannelData: POINTER TO HIGH_LEVEL_INTERFACE_CH;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: HLI_ChannelReset                                  *)
+(* --------------------------------------------------------- *)
+(*   Desc:                                                   *)
+(* Author: MK ,MiB                                           *)
+(*   Date: 20.11.2012                                        *)
+(*   Rev.: 1.1                                               *)
+(* ========================================================= *)
+
+
+HLI3_ChannelReset := FALSE;
+IF NOT HLI3_CheckChannelValid(nChannel := nChanIdx) THEN
+	RETURN;
+END_IF
+
+(* get pointer to channel data *)
+pChannelData := gpCh[nChanIdx];
+IF (pChannelData = 0) THEN   (* check for zero pointer *)
+	RETURN;
+END_IF
+
+(* is a reset commanded *)
+IF pChannelData^.bahn_lc_control.plc_reset.command_r = TRUE THEN
+	(* quit this reset *)
+	pChannelData^.bahn_lc_control.plc_reset.state_w := TRUE;
+	ADSLOG(strMsg:='Reset of channel: %d', nDINT:=INT_TO_DINT(nChanIdx), strArg:='');
+	HLI3_ChannelReset := TRUE;
+END_IF
+
+]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

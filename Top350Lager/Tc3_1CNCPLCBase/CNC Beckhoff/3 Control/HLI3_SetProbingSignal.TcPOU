@@ -1,0 +1,24 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI3_SetProbingSignal" Id="{4969e280-1a3d-43a6-b4bb-220734708a3a}">
+    <Declaration><![CDATA[FUNCTION HLI3_SetProbingSignal : BOOL
+VAR_INPUT
+	nHliAxisIdx: INT;
+	bProbingSignal: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+IF NOT HLI3_CheckAxisValid(nHliAxisIdx := nHliAxisIdx) THEN	
+	HLI3_SetProbingSignal := FALSE;
+	RETURN;
+END_IF
+
+
+gpAx[nHliAxisIdx]^.lr_mc_control.probing_signal.enable_w  := TRUE;
+gpAx[nHliAxisIdx]^.lr_mc_control.probing_signal.command_w := bProbingSignal;
+HLI3_SetProbingSignal := TRUE;
+]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

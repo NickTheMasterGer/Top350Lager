@@ -1,0 +1,17 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <GVL Name="Global_MachineView" Id="{e261bd47-41e1-4ca6-ac47-bed35a594bb7}">
+    <Declaration><![CDATA[VAR_GLOBAL CONSTANT
+	///--------------------------
+	///	Machine View Status      
+	///--------------------------
+	MV_NUMBER_OF_ROWS: INT := 6;
+	/// dynamically no maximum 
+	MV_NUMBER_OF_BLOCKS: INT := 4;
+END_VAR
+
+VAR_GLOBAL
+	MViewStatus: ARRAY[1..MV_NUMBER_OF_BLOCKS] OF ST_MViewStatus;
+END_VAR]]></Declaration>
+    <ObjectProperties />
+  </GVL>
+</TcPlcObject>

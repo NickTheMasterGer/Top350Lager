@@ -1,0 +1,14 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <GVL Name="Global_VE" Id="{31395841-cad1-421c-8ef6-def240e61b77}">
+    <Declaration><![CDATA[VAR_GLOBAL
+	PLC_OffsetX: LREAL := 123.23;
+	PLC_OffsetY: LREAL := 223.23;
+	PLC_OffsetZ: LREAL := 323.23;
+	/// HMI -> PLC 
+	HMI_PLC_OffsetX: LREAL;
+	HMI_PLC_OffsetY: LREAL;
+	HMI_PLC_OffsetZ: LREAL;
+END_VAR]]></Declaration>
+    <ObjectProperties />
+  </GVL>
+</TcPlcObject>

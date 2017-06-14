@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4019.0">
+  <DUT Name="E_CNCVariablesType" Id="{36f08dc2-27a7-4354-ac03-cd9d79b2904d}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_CNCVariablesType :
+(
+	none :=0,
+	VE,
+    P,
+    VP,
+    VS,
+    VL,
+    VG,
+    VA
+);
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

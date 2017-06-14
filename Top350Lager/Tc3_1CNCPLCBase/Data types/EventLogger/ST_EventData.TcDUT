@@ -1,0 +1,15 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="ST_EventData" Id="{8c8128fc-446e-4eeb-b3ac-fcf7b0704004}">
+    <Declaration><![CDATA[TYPE ST_EventData :
+STRUCT
+	nSourceText: UINT;
+	nSourceDesc: UINT;
+	nErrorCode: UDINT;
+	sModul: STRING;
+	sAddInfo: STRING;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

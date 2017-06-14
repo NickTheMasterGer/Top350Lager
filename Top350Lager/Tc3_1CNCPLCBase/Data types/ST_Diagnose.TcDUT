@@ -1,0 +1,17 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="ST_Diagnose" Id="{a44c614e-5a57-4e4c-aa78-5c8e1da6d619}">
+    <Declaration><![CDATA[TYPE ST_Diagnose :
+STRUCT
+	Hydraulik: FB_Diag;
+	Pneumatik: FB_Diag;
+	Kuehlung: FB_Diag;
+	MSGList1: ARRAY[FIRST_MESSAGE..LAST_MESSAGE] OF BOOL;
+	MSGListQuit1: ARRAY[FIRST_MESSAGE..LAST_MESSAGE] OF BOOL;
+	MSGList2: ARRAY[FIRST_MESSAGE..LAST_MESSAGE] OF BOOL;
+	MSGListQuit2: ARRAY[FIRST_MESSAGE..LAST_MESSAGE] OF BOOL;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

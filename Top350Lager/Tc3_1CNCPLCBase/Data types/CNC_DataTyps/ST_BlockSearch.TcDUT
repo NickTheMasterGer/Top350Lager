@@ -1,0 +1,27 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="ST_BlockSearch" Id="{24ce5521-9d14-43da-94a2-532255f07efb}">
+    <Declaration><![CDATA[TYPE ST_BlockSearch :
+STRUCT
+	/// Block Search 
+	Active: BOOL;
+	/// Edge signal 
+	bStartRead: BOOL;
+	/// Edge signal 
+	bStartWrite: BOOL;
+	/// 0 - no block search
+	///                                    3 - start position by block count
+	///                                    4 - start position by block nr
+	///                                    5 - start position BY individual mark 
+	nType: UINT;
+	fDistance: LREAL;
+	bAutoReturn: BOOL;
+	nDeviationMax: UDINT;
+	nBlockNumber: DINT;
+	nPass: DINT;
+	nBlockCount: DINT;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

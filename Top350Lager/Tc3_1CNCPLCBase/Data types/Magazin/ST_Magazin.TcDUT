@@ -1,0 +1,12 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="ST_Magazin" Id="{826073ed-9cda-45b0-9e74-89c299c95128}">
+    <Declaration><![CDATA[TYPE ST_Magazin :
+STRUCT
+	bPlatzBelegt: ARRAY[1..8] OF BOOL;
+	id: ARRAY[1..8] OF CNC_TOOL_ID;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

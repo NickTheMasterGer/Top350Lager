@@ -1,0 +1,91 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4018.5">
+  <POU Name="HLI3_Init" Id="{72bd24cb-21e3-4412-806b-0914b43f81fc}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM HLI3_Init
+VAR
+	Hli: MCV_HliInterface;
+	bFirstCycle: BOOL := TRUE;
+	ipSrv: ITComObjectServer;
+	oidCnc: UDINT := 16#5500001;
+	bUnregister: BOOL;
+	MessageOutput: R_TRIG;
+	nHliAxisIdx	: INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    PRG: HLI_Init                                          *)
+(* --------------------------------------------------------- *)
+(*   Desc:                                                   *)
+(* Author: MK                                                *)
+(*   Date: 21.12.2011                                        *)
+(*   Rev.: 1.0                                               *)
+(*   Date: 06.08.2013                                        *)
+(*   Rev.: 1.1 TV   Error Message if HLI not initialized	 *)
+(* ========================================================= *)
+
+
+(* Init Tool Configuration structures *)
+HLI3_InitToolConfig();
+
+IF bFirstCycle THEN
+	Hli();					(* initialize HLI *)
+	bFirstCycle := FALSE;
+END_IF
+
+
+IF Hli.Initialized  = TRUE
+THEN
+	(* User initialization, used during start of PLC once *)
+	IF CncSystem.bUserInitDone = FALSE THEN
+		(* Initialisierungen auf dem HLI-Interface *)
+		CncSystem.bUserInitDone := HLI3_UserInitialisation();
+		ADSLOG(strMsg:='High Level Interfaces initialized: %s', nDINT:=0, strArg:='');
+	END_IF
+
+	IF (NOT CNCSystem.bHLIInit) THEN
+		FOR nHliAxisIdx := 0 TO HLI_SYS_AX_MAXIDX DO
+        	IF HLI3_CheckAxisValid(nHliAxisIdx) THEN
+            	CNCSystem.LogAxisNo[gpAx[nHliAxisIdx]^.ipo_state.log_achs_nr_r].nHliAxisIdx := nHliAxisIdx;
+                CNCSystem.LogAxisNo[gpAx[nHliAxisIdx]^.ipo_state.log_achs_nr_r].stLogName   := gpAx[nHliAxisIdx]^.lr_state.log_name_r.zeichen;                          
+           	END_IF
+		END_FOR
+	END_IF
+	
+	(* initialization finished *)
+	CNCSystem.bHLIInit := TRUE;
+ELSE
+	MessageOutput(CLK:=Hli.Error);
+	IF Hli.Error = TRUE	THEN
+		(* High Level Interface (HLI) not initialized *)
+		IF MessageOutput.Q THEN
+			ADSLOGDINT(	msgCtrlMask := ADSLOG_MSGTYPE_ERROR OR
+												ADSLOG_MSGTYPE_MSGBOX OR
+												ADSLOG_MSGTYPE_LOG,
+							msgFmtStr := 'High Level Interface (HLI) not initialized! Errorcode: %d',
+							dintArg := Hli.ErrorID);
+		END_IF
+		CNCSystem.nInitErrorId := Hli.ErrorID;
+		CNCSystem.bInitError := TRUE;
+	END_IF;	
+END_IF
+]]></ST>
+    </Implementation>
+    <ObjectProperties>
+      <XmlArchive>
+        <Data>
+          <o xml:space="preserve" t="POUImageProperty">
+            <n n="ImageData" />
+            <v n="TransparencyColor">"White"</v>
+            <v n="MakeTransparent">false</v>
+          </o>
+        </Data>
+        <TypeList>
+          <Type n="Boolean">System.Boolean</Type>
+          <Type n="POUImageProperty">{bb741845-1ec5-4be9-bb0d-2cf7058af574}</Type>
+          <Type n="String">System.String</Type>
+        </TypeList>
+      </XmlArchive>
+    </ObjectProperties>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,68 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI3_DoChannelHFunction" Id="{3ad9cafe-ba81-4e5e-a5f6-4229969237ef}">
+    <Declaration><![CDATA[FUNCTION_BLOCK HLI3_DoChannelHFunction
+VAR_INPUT
+	/// Channel number 
+	nChanIdx: INT;
+	stTechnoAttributeData: St_TechnoAttributeData;
+END_VAR
+VAR_OUTPUT
+	bBusy: BOOL;
+END_VAR
+VAR
+	pChannel: POINTER TO ST_CncChannel;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*     FB: HLI_DoChannelHFunction                            *)
+(* --------------------------------------------------------- *)
+(*   Desc:                                                   *)
+(* Author: MiB                                               *)
+(*   Rev.: 1.0                                               *)
+(*   Date: 24.11.2010                                        *)
+(*       : 08.04.2005                                        *)
+(* ========================================================= *)
+(* Rev.:	1.2												 *)
+(* Date:	26.01.2011                                   	 *)
+(* Author:	HR												 *)
+(* Author:	Added support for additional h function number	 *)
+(*			via new input variable 'nArg'				 	 *)
+(* ========================================================= *)
+bBusy := TRUE;
+
+IF NOT HLI3_CheckChannelValid(nChannel := nChanIdx) THEN
+	RETURN; (* A b b r u c h *)
+END_IF
+
+
+pChannel := ADR(CNCSystem.Channel[nChanIdx]);
+
+(* Synch M-Functions *)
+IF stTechnoAttributeData.nFunctionNumber_r > 0 AND stTechnoAttributeData.nFunctionNumber_r < 1000 THEN
+	IF NOT pChannel^.H[stTechnoAttributeData.nFunctionNumber_r].bRes THEN					(* M-Function not set *)
+		pChannel^.H[stTechnoAttributeData.nFunctionNumber_r].bState_rw				:= TRUE;	(* set M-Function *)
+		pChannel^.H[stTechnoAttributeData.nFunctionNumber_r].nArgument_r		:= stTechnoAttributeData.nArgument_r;
+		pChannel^.H[stTechnoAttributeData.nFunctionNumber_r].nBlockNumber_r		:= stTechnoAttributeData.nBlockNumber_r;
+		pChannel^.H[stTechnoAttributeData.nFunctionNumber_r].nPrgLineNumber_r	:= stTechnoAttributeData.nPrgLineNumber_r;
+		pChannel^.H[stTechnoAttributeData.nFunctionNumber_r].nFunctionNumber_r	:= stTechnoAttributeData.nFunctionNumber_r;
+		pChannel^.H[stTechnoAttributeData.nFunctionNumber_r].nTime_r			:= stTechnoAttributeData.nTime_r;		
+		pChannel^.H[stTechnoAttributeData.nFunctionNumber_r].bRes 				:= TRUE;	(* set acknowledge *)
+		pChannel^.actH_r := CONCAT('H', UDINT_TO_STRING(stTechnoAttributeData.nFunctionNumber_r));
+	ELSE
+		IF NOT pChannel^.H[stTechnoAttributeData.nFunctionNumber_r].bState_rw THEN				(* wait for quit *)
+			pChannel^.H[stTechnoAttributeData.nFunctionNumber_r].bRes 			:= FALSE;	(* quit the ack *)
+			pChannel^.H[stTechnoAttributeData.nFunctionNumber_r].nArgument_r	:= 0;		(* reset the argument *)
+			pChannel^.H[stTechnoAttributeData.nFunctionNumber_r].nBlockNumber_r		:= 0;
+			pChannel^.H[stTechnoAttributeData.nFunctionNumber_r].nPrgLineNumber_r	:= 0;
+			pChannel^.H[stTechnoAttributeData.nFunctionNumber_r].nFunctionNumber_r	:= 0;
+			pChannel^.h[stTechnoAttributeData.nFunctionNumber_r].nTime_r			:= 0;
+			pChannel^.actH_r := '';					
+			bBusy 							:= FALSE;	(* quit *)
+		END_IF
+	END_IF
+END_IF]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

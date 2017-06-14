@@ -1,0 +1,20 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI3_GetIpoState" Id="{71e85e22-595d-4b23-91f7-c7b0954e79a6}">
+    <Declaration><![CDATA[FUNCTION HLI3_GetIpoState : BOOL
+VAR_INPUT
+	nChanIdx: INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+IF NOT HLI3_CheckChannelValid(nChannel := nChanIdx) THEN
+	RETURN;
+END_IF
+
+HLI3_GetIpoState:=gpCh[nChanIdx]^.bahn_state.interpolation_active_r;
+]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,16 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.20">
+  <DUT Name="E_CNC_ManualType" Id="{3ce5be70-758f-49e0-8f60-64996c5bc897}">
+    <Declaration><![CDATA[TYPE E_CNC_ManualType :
+(
+	NoManualMode := 0,
+	Handwheel := 1,
+	TippMode := 2,
+	JogMode := 3,
+	JoystickMode := 4,
+	DigitalJoystick := 5
+);
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

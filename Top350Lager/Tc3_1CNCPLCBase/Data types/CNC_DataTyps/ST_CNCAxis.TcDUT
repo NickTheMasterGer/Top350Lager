@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4018.5">
+  <DUT Name="ST_CNCAxis" Id="{10551673-bbb0-478c-a9f1-c9d0c1ce43f6}">
+    <Declaration><![CDATA[TYPE ST_CNCAxis :
+STRUCT
+	nHliAxisIdx : INT := -1;
+    stLogName	: STRING(HLI_ACHS_NAME_LAENGE);
+END_STRUCT
+END_TYPE
+
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

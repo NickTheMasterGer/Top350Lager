@@ -1,0 +1,241 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.19">
+  <POU Name="HLI3_QuitChannelMHTFunction" Id="{9bacb5e6-1c87-4b6b-9e22-af8c20d31d21}">
+    <Declaration><![CDATA[FUNCTION_BLOCK HLI3_QuitChannelMHTFunction
+VAR_INPUT
+	/// Number of channel 
+	nChanIdx: INT;
+END_VAR
+VAR_OUTPUT
+	bOK: BOOL;
+END_VAR
+VAR
+	ChannelMFunction: HLI3_DoChannelMFunction;
+	ChannelTFunction: HLI3_DoChannelTFunction;
+	ChannelHFunction: HLI3_DoChannelHFunction;
+	/// local pointer to Data of actual Channel 
+	pChannelData: POINTER TO HIGH_LEVEL_INTERFACE_CH;
+	/// local pointer to actual techno unit 
+	pActTechnoUnit: POINTER TO TECHNO_UNIT_CH;
+	/// Index of axis specific technology function at HLI 
+	nTechFctMaxIdx: UINT;
+	/// loop variable 
+	idx: UINT;
+	/// number of M-function 
+	nFuncNr: UDINT;
+	nArgument: DINT;
+	/// basis id of a tool 
+	nToolBasicId: UDINT;
+	pMHProcess: POINTER TO HLI_M_H_PROZESS;
+	pSProcess: POINTER TO HLI_S_PROZESS;
+	pTProcess: POINTER TO HLI_T_PROZESS;
+	stAttributeData: St_TechnoAttributeData;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*     FB: HLI3_QuitChannelMHTFunction                        *)
+(* --------------------------------------------------------- *)
+(*   Desc:                                                   *)
+(* Author: MK                                                *)
+(*   Rev.: 1.1                                               *)
+(*   Date: 18.07.2002                                        *)
+(*       : 08.04.2005                                        *)
+(*          24.11.2010 MiB Erweiterung um H Funktionen 		 *)
+(* ========================================================= *)
+(* Rev.:	1.2												 *)
+(* Date:	02.10.2010                                    	 *)
+(* Author:	HR												 *)
+(* Author:	Added support for additional m function number	 *)
+(* ========================================================= *)
+(* Rev.:	1.3												 *)
+(* Date:	26.01.2011                                    	 *)
+(* Author:	HR												 *)
+(* Author:	Added support for additional h function number	 *)
+(* ========================================================= *)
+(* Rev.:	1.4												 *)
+(* Date:	20.11.2012                                    	 *)
+(* Author:	MiB												 *)
+(* Author:	TC3												 *)
+(* ========================================================= *)
+(* Rev.:	1.4.1									         *)
+(* Date:	15.07.2013                                    	 *)
+(* Author:	TV												 *)
+(* ========================================================= *)
+
+IF NOT HLI3_CheckChannelValid(nChannel := nChanIdx) THEN
+	bOK := FALSE;
+	RETURN; (* A b b r u c h *)
+END_IF
+
+
+(* get pointer to channel data *)
+pChannelData := gpCh[nChanIdx];
+
+pActTechnoUnit := ADR(pChannelData^.techno_unit_std_sync[0]);
+
+(* test if there are open synchronisations  *)
+IF pChannelData^.used_units_std_sync_r > 0 THEN
+
+	nTechFctMaxIdx := pChannelData^.used_units_std_sync_r - 1;
+
+	FOR idx := 0 TO nTechFctMaxIdx DO
+		(* get pointer to actual techno unit *)
+		pActTechnoUnit := ADR(pChannelData^.techno_unit_std_sync[idx]);
+	
+	
+		(* test if this M-function has to be acknowledged *)
+		IF pActTechnoUnit^.please_rw = TRUE AND				(* request from CNC *)
+		   pActTechnoUnit^.done_w = FALSE AND				(* not acknowledged *)
+		   pActTechnoUnit^.fkt_ctrl_r = HLI_INTF_M_FKT		(* M-function *)
+		THEN
+			(* Read number of M-function *)
+			pMHProcess := ADR(pActTechnoUnit^.attribut_r.data[0]);
+			nFuncNr    := pMHProcess^.nr;
+			nArgument	:= pMHProcess^.add_nr_r;
+			
+			
+			stAttributeData.nFunctionNumber_r := pMHProcess^.nr;
+			stAttributeData.nTime_r		:= pMHProcess^.zeit;
+			stAttributeData.nArgument_r 		:= pMHProcess^.add_nr_r;
+			stAttributeData.nBlockNumber_r 	:= pMHProcess^.satz_nr;
+			stAttributeData.nPrgLineNumber_r	:= pMHProcess^.prg_zeilen_nr;
+			
+	
+			ChannelMFunction(nChanIdx:=nChanIdx, stTechnoAttributeData := stAttributeData);
+			IF ChannelMFunction.bBusy = FALSE THEN
+				(* acknowledge this M-function *)
+				pActTechnoUnit^.please_rw := FALSE;
+				pActTechnoUnit^.done_w := TRUE;
+				ADSLOG(strMsg:='acknowledge of M-function: %d', nDINT:=UDINT_TO_DINT(nFuncNr), strArg:='');
+			END_IF
+	
+			bOK := TRUE;
+		END_IF
+
+
+		(* test if this H-function has to be acknowledged *)
+		IF pActTechnoUnit^.please_rw = TRUE AND						(* request from CNC *)
+		   pActTechnoUnit^.done_w = FALSE AND						(* not acknowledged *)
+		   pActTechnoUnit^.fkt_ctrl_r = HLI_INTF_H_FKT		(* H-function *)
+		THEN
+			(* Read number of H-function *)
+			pMHProcess := ADR(pActTechnoUnit^.attribut_r.data[0]);
+			stAttributeData.nFunctionNumber_r := pMHProcess^.nr;
+			stAttributeData.nTime_r		:= pMHProcess^.zeit;
+			stAttributeData.nArgument_r 		:= pMHProcess^.add_nr_r;
+			stAttributeData.nBlockNumber_r 	:= pMHProcess^.satz_nr;
+			stAttributeData.nPrgLineNumber_r	:= pMHProcess^.prg_zeilen_nr;
+	
+			ChannelHFunction(nChanIdx:=nChanIdx, stTechnoAttributeData:= stAttributeData);
+
+			(* acknowledge this H-function *)
+			IF ChannelHFunction.bBusy = FALSE THEN
+					(* acknowledge this H-function *)
+				pActTechnoUnit^.please_rw := FALSE;
+				pActTechnoUnit^.done_w := TRUE;
+				ADSLOG(strMsg:='acknowledge of H-function: %d', nDINT:=UDINT_TO_DINT(nFuncNr), strArg:='');
+			END_IF
+			bOK := TRUE;
+		END_IF
+	
+		(* test if this T-function has to be acknowledged *)
+		IF pActTechnoUnit^.please_rw = TRUE AND				(* request from CNC *)
+		   pActTechnoUnit^.done_w = FALSE AND				(* not acknowledged *)
+		   pActTechnoUnit^.fkt_ctrl_r = HLI_INTF_TOOL		(* T-function *)
+		THEN
+			(* Read number of T-function *)
+			pTProcess    := ADR(pActTechnoUnit^.attribut_r.data[0]);
+			nToolBasicId := DINT_TO_UDINT(pTProcess^.id.basic);
+	
+			ChannelTFunction(nChanIdx:=nChanIdx, nFuncNr:=nToolBasicId);
+	
+			(* acknowledge this T-function *)
+			pActTechnoUnit^.please_rw := FALSE;
+			pActTechnoUnit^.done_w := TRUE;
+			ADSLOG(strMsg:='acknowledge of T-function: %d', nDINT:=UDINT_TO_DINT(nToolBasicId), strArg:='');
+	
+			bOK := TRUE;
+		END_IF
+	
+	END_FOR
+
+END_IF
+
+
+(*
+	HLI_INTF_H_FKT                 :    INT:=2;
+	HLI_INTF_SPINDEL              :    INT:=3;
+	HLI_INTF_TOOL                 :    INT:=4;
+	GCW_250_HLIIntfAxBlock              :    INT:=5;
+	GCW_250_HLIIntfVEVariable           :    INT:=6;
+	GCW_250_HLIIntfVEVariable_1         :    INT:=7;
+	GCW_250_HLIIntfVEVariable_2         :    INT:=8;
+	GCW_250_HLIIntfUnknown              :    INT:=9;
+*)
+
+(*******************************************************************************************************************)
+
+FOR idx := 0 TO INT_TO_UINT(HLI_TU_CH_LATE_SYNC_MAXIDX) DO
+	IF pChannelData^.techno_unit_late_sync[idx].please_rw = TRUE
+	AND pChannelData^.techno_unit_late_sync[idx].done_w = FALSE THEN
+
+		(* get pointer to actual techno unit *)
+		pActTechnoUnit := ADR(pChannelData^.techno_unit_late_sync[idx]);
+
+		IF pActTechnoUnit^.please_rw = TRUE AND				(* request from CNC *)
+			pActTechnoUnit^.done_w = FALSE AND				(* not acknowledged *)
+			pActTechnoUnit^.fkt_ctrl_r = HLI_INTF_M_FKT		(* M-function *)
+		THEN
+			pMHProcess := ADR(pActTechnoUnit^.attribut_r.data[0]);
+			nFuncNr    := pMHProcess^.nr;
+			
+			stAttributeData.nFunctionNumber_r := pMHProcess^.nr;
+			stAttributeData.nTime_r		:= pMHProcess^.zeit;
+			stAttributeData.nArgument_r 		:= pMHProcess^.add_nr_r;
+			stAttributeData.nBlockNumber_r 	:= pMHProcess^.satz_nr;
+			stAttributeData.nPrgLineNumber_r	:= pMHProcess^.prg_zeilen_nr;
+
+			ChannelMFunction(nChanIdx:=nChanIdx, stTechnoAttributeData:=stAttributeData);
+			IF ChannelMFunction.bBusy = FALSE THEN
+			(* acknowledge this M-function *)
+			pActTechnoUnit^.please_rw := FALSE;
+			pActTechnoUnit^.done_w := TRUE;
+			ADSLOG(strMsg:='acknowledge of M-function: %d', nDINT:=UDINT_TO_DINT(nFuncNr), strArg:='');
+			(* ADSLOGDINT( msgCtrlMask := ADSLOG_MSGTYPE_MSGBOX OR
+										ADSLOG_MSGTYPE_LOG,
+						msgFmtStr := 'Channel acknowledge of M-function: %d',
+						dintArg := pMHProcess^.nr);
+			*)
+		END_IF
+		bOK := TRUE;
+
+	(*	ELSIF   pActTechnoUnit^.fkt_ctrl_r = HLI_INTF_SPINDEL THEN (* spindle-function *)
+
+ 			(* Example: read number of S-function *)
+			pSProzess := ADR(pActTechnoUnit^.attribut_r.data[0]);
+			ADSLOGDINT( msgCtrlMask := ADSLOG_MSGTYPE_MSGBOX OR
+										ADSLOG_MSGTYPE_LOG,
+						msgFmtStr := 'Late synch : %d',
+						dintArg := pSProzess^.move_cmd);
+
+		ELSIF   pActTechnoUnit^.fkt_ctrl_r = HLI_INTF_TOOL THEN
+
+			pHLI_T_PROZESS := ADR(pActTechnoUnit^.attribut_r.data[0]);
+			ADSLOGDINT( msgCtrlMask := ADSLOG_MSGTYPE_MSGBOX OR
+										ADSLOG_MSGTYPE_LOG,
+						msgFmtStr := 'Late tool process: %d',
+						dintArg := pTProcess^.id.basic);*)
+		(*ELSE
+				ADSLOGDINT( msgCtrlMask := ADSLOG_MSGTYPE_MSGBOX OR
+											ADSLOG_MSGTYPE_LOG,
+							msgFmtStr := 'Channel acknowledge unknown type: %d',
+							dintArg := pActTechnoUnit^.fkt_ctrl_r);*)
+		END_IF
+
+	END_IF
+END_FOR
+(**********************************************************************************************************************)]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

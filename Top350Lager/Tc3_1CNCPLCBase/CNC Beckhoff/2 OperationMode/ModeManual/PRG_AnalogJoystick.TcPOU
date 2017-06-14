@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4019.0">
+  <POU Name="PRG_AnalogJoystick" Id="{ff677b3a-89ad-40a2-b848-bc2972b155cb}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM PRG_AnalogJoystick
+VAR_INPUT
+	nLogAxisNr: UINT;
+	/// Actual Analog Value 
+	Analog_Value: DINT;
+	/// static signal : Analog Min Value 
+	AnalogValueMin: DINT;
+	/// static signal : Analog Max Value 
+	AnalogValueMax: DINT;
+	/// Dead Band for Zero Value 
+	AnalogValueZeroDeadBand: DINT;
+END_VAR
+VAR_IN_OUT
+	bKeyPos: BOOL;
+	bKeyNeg: BOOL;
+END_VAR
+VAR
+	/// Index of axis specific HLI area 
+	nHliAxisIdx: INT;
+	Norm_AnalogValue: LREAL;
+	Zero_AnalogValue: LREAL;
+	Override: LREAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    Prog: Analog JoyStick			                  		 *)
+(* --------------------------------------------------------- *)
+(*   Desc:                                                   *)
+(*   Author: TV	, MiB	                                         *)
+(*   Date: 24.07.2015                                       *)
+(*   Rev.: 6.0                                               *)
+(* ========================================================= *)
+	Norm_AnalogValue := (AnalogValueMax - AnalogValueMin);
+	Zero_AnalogValue := AnalogValueMin + Norm_AnalogValue / 2;
+
+	IF nLogAxisNr > 0 AND Norm_AnalogValue > 0 THEN
+		nHliAxisIdx :=  HLI3_GetHliAxisIdx(UINT_TO_INT(nLogAxisNr));
+		IF (nHliAxisIdx = -1) THEN
+			RETURN;
+		END_IF
+		gpAx[nHliAxisIdx]^.ipo_mc_control.override.enable_w := TRUE;
+		gpAx[nHliAxisIdx]^.ipo_mc_control.override_valid.enable_w := TRUE;
+		gpAx[nHliAxisIdx]^.ipo_mc_control.override_valid.command_w := TRUE;
+		Override := ABS(((Analog_Value  - AnalogValueMin) * 200 / Norm_AnalogValue)-100);
+
+		IF Override > 100.0 THEN Override := 100.0; END_IF
+
+		IF Analog_Value > Zero_AnalogValue THEN bKeyPos := TRUE; bKeyNeg := FALSE; ELSE bKeyPos := FALSE; END_IF
+		IF Analog_Value < Zero_AnalogValue THEN bKeyNeg := TRUE; bKeyPos := FALSE; ELSE bKeyNeg := FALSE; END_IF
+
+		IF Analog_Value > (Zero_AnalogValue - AnalogValueZeroDeadBand) AND Analog_Value < (Zero_AnalogValue + AnalogValueZeroDeadBand) THEN
+			Override := 0;
+			bKeyNeg := FALSE;
+			bKeyPos := FALSE;
+		END_IF
+
+		gpAx[nHliAxisIdx]^.ipo_mc_control.override.command_w := LREAL_TO_UINT(Override * 10);
+	END_IF]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

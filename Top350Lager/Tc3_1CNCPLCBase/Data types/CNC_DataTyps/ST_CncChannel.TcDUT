@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4019.0">
+  <DUT Name="ST_CncChannel" Id="{5005b8a4-8e79-451c-a8da-b0bf816d41bc}">
+    <Declaration><![CDATA[TYPE ST_CncChannel :
+STRUCT
+	/// Operation Mode 
+	Mode: ST_OpModes;
+	/// Operation States 
+	State: ST_OpStates;
+	/// Selected Mode 
+	ActMode: UDINT;
+	/// Selected Mode as string 
+	ActModeString: STRING;
+	/// Selected State 
+	ActState: UDINT;
+	/// Selected State as string 
+	ActStateString: STRING;
+	/// Block Search : Act. Distance 
+	ActDistance: LREAL;
+	/// Block Search : Act. Block Count 
+	ActBlockCount: UDINT;
+	actM_r: STRING(5);
+	actH_r: STRING(5);
+	/// M-Functions 
+	M: ARRAY[0..999] OF ST_TechnoAttributeData;
+	/// H-Functions 
+	H: ARRAY[0..999] OF ST_TechnoAttributeData;	
+	/// Fehlerflag des Kanals 
+	Error: BOOL;	
+	/// Message from NC program to PLC 
+	Message: STRING(HLI_MSG_CONTENT_STRL);
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

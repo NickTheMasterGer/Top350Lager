@@ -1,0 +1,16 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.23">
+  <DUT Name="ST_PDatLineProgValue" Id="{fe032008-8f73-4dd9-87c8-f183d9ed1531}">
+    <Declaration><![CDATA[TYPE ST_PDatLineProgValue :
+STRUCT
+	///@1: StringWerte @11:2
+	sValue: ARRAY[1..5] OF STRING(25);
+	///@1: IntWerte @11:2
+	nValue: ARRAY[1..5] OF INT;
+	///@1: LrealWerte @11:2
+	fValue: ARRAY[1..5] OF LREAL;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

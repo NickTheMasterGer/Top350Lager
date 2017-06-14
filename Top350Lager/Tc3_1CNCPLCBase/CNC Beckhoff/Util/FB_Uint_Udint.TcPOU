@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4019.2">
+  <POU Name="FB_Uint_Udint" Id="{ea86ec42-82de-47d3-a502-3c3c1a29a03f}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Uint_Udint
+VAR
+	nOldValue: UINT;
+	nDiff: DINT;
+	nMinus: BOOL;
+	nPlus: BOOL;
+END_VAR
+VAR_INPUT
+	nInSmall: UINT;
+END_VAR
+
+VAR_IN_OUT
+	nBig: UDINT;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[nDiff := nInSmall - nOldValue;
+
+
+(* Richtung Minus *)
+IF ndiff > 10000 THEN
+	nBig := nBig - 1;
+	nMinus := TRUE;
+END_IF
+
+(* Richtung Plus *)
+IF ndiff < -10000 THEN
+	nBig := nBig + 1;
+	nPlus := TRUE;
+END_IF
+
+IF (ndiff < 500) AND ndiff > -500 THEN
+  nBig := DINT_TO_UDINT( UDINT_TO_DINT(nBig) + nDiff) ;
+END_IF
+nOldValue := nInSmall;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

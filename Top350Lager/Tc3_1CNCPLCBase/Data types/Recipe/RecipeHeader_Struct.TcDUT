@@ -1,0 +1,17 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="RecipeHeader_Struct" Id="{4a7df852-7afc-4a49-b3f1-410314d1682e}">
+    <Declaration><![CDATA[TYPE RecipeHeader_Struct :
+STRUCT
+	/// PLC -> HMI 
+	RezeptAnf: STRING(40);
+	/// HMI -> PLC 
+	RezeptAkt: STRING(40);
+	sReserve: ARRAY[3..10] OF STRING(40);
+	Values: ARRAY[1..30] OF LREAL;
+	List: ARRAY[1..50] OF RecipeList_Struct;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

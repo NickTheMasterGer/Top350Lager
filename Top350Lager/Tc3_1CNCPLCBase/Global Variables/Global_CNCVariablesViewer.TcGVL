@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4018.5">
+  <GVL Name="Global_CNCVariablesViewer" Id="{28ce09d5-7b3d-4026-816a-9c50642d8a0d}">
+    <Declaration><![CDATA[{attribute 'pack_mode' := '1'}
+VAR_GLOBAL
+	stCNCVariablesViewer_Data : ARRAY[0..MAX_CNC_VAR_LIST_IDX] OF ST_CNCVariablesViewer_Data;
+	eVariablesType : E_CNCVariablesType;
+
+END_VAR
+
+VAR_GLOBAL CONSTANT
+	MAX_CNC_VAR_LIST_IDX : UINT := 200;
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

@@ -1,0 +1,17 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="E_SoE_Type" Id="{7291cfaf-61ee-45f9-a21b-a91efcaef55d}">
+    <Declaration><![CDATA[TYPE E_SoE_Type :
+(
+	eSoE_Type_BIN := 0,
+	eSoE_Type_UNSIGNED := 1,
+	eSoE_Type_SIGNED := 2,
+	eSoE_Type_HEX := 3,
+	eSoE_Type_TEXT := 4,
+	eSoE_Type_IDN := 5,
+	eSoE_Type_FLOAT := 6
+);
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

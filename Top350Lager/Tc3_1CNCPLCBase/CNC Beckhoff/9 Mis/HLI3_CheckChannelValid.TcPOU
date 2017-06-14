@@ -1,0 +1,39 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.19">
+  <POU Name="HLI3_CheckChannelValid" Id="{1072185c-a2c8-4d3b-9cf5-dd16eea395c6}">
+    <Declaration><![CDATA[FUNCTION HLI3_CheckChannelValid : BOOL
+VAR_INPUT
+	nChannel: INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: HLI3_CheckChannelValid                            *)
+(* --------------------------------------------------------- *)
+(*   Desc: Check if channel ID is valid for HLI access       *)
+(*   Author: MiB                                             *)
+(*   Date: 19.11.2012                                        *)
+(*   Last: 21.06.2013										 *)
+(*   Rev.: 1.1                                               *)
+(* --------------------------------------------------------- *)
+(*   Desc: Corrected IF statement (line 14)		 	      	 *)
+(*   Author: RCH                                             *)
+(*   Date: 16.09.2013                                        *)
+(*   Rev.: 1.2                                               *)
+(* ========================================================= *)
+
+IF (nChannel < 0) THEN
+	HLI3_CheckChannelValid:= FALSE;
+	RETURN; (* A b b r u c h *)
+ELSIF (nChannel >=  UDINT_TO_INT(gNrCh) ) OR		(* check for channel no *)
+       (gpCh[nChannel] = 0) 				  (* check for zero pointer *)
+THEN
+	HLI3_CheckChannelValid:= FALSE;
+	RETURN; (* A b b r u c h *)
+ELSE
+	HLI3_CheckChannelValid := TRUE;
+	RETURN;
+END_IF]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

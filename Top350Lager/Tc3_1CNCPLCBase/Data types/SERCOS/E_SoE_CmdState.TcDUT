@@ -1,0 +1,16 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="E_SoE_CmdState" Id="{c534154c-120e-4481-a94a-9763334b3e0a}">
+    <Declaration><![CDATA[TYPE E_SoE_CmdState :
+(
+	eSoE_CmdState_NotSet := 0,
+	eSoE_CmdState_Set := 1,
+	eSoE_CmdState_Executed := 2,
+	eSoE_CmdState_SetAndInterrupted := 5,
+	eSoE_CmdState_SetEnabledNotExecuted := 7,
+	eSoE_CmdState_Error := 15
+);
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

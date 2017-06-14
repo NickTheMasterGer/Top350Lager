@@ -1,0 +1,20 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI3_GetAxisReferenceState" Id="{16372193-946b-4125-90ee-8713a0247470}">
+    <Declaration><![CDATA[FUNCTION HLI3_GetAxisReferenceState : BOOL
+VAR_INPUT
+	nHliAxisIdx: INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+IF NOT HLI3_CheckAxisValid(nHliAxisIdx := nHliAxisIdx) THEN
+	HLI3_GetAxisReferenceState := FALSE;
+	RETURN;
+END_IF
+
+HLI3_GetAxisReferenceState:= gpAx[nHliAxisIdx]^.lr_state.homing_done_r;
+]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

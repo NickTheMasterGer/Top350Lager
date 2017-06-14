@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4019.0">
+  <POU Name="HLI3_LogicalAxisInManualMode" Id="{10be9606-8c5e-4c6c-a9d0-1da42dbd27cc}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION HLI3_LogicalAxisInManualMode : ARRAY[0..HLI_KEY_MAXIDX] OF UINT
+VAR_INPUT
+	nChan: INT;
+END_VAR
+VAR
+	i: INT;
+	n: INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* 		  If no axis is in manual mode it returns 0           		*)
+(* Author: MiB/TV                                         			*)
+(*   Date: 16.07.2007                                         		*)
+(*   Last: 05.04.2016                                        		*)
+(*   Rev.: 1.1                                                 		*)
+(* ================================================================= *)
+
+IF (NOT HLI3_CheckChannelValid(nChannel := nChan)) THEN
+	RETURN;
+END_IF
+
+n:= 0;
+FOR i := 0 TO HLI_CH_AX_MAXIDX DO
+  	IF (gpCh[nChan]^.bahn_state.coord_r[i].hb_display_r.state <> 0) THEN
+		HLI3_LogicalAxisInManualMode[n] := gpCh[nChan]^.bahn_state.coord_r[i].log_achs_nr_r;
+		IF n < HLI_KEY_MAXIDX THEN
+			n := n+1;
+		END_IF
+	END_IF
+END_FOR
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

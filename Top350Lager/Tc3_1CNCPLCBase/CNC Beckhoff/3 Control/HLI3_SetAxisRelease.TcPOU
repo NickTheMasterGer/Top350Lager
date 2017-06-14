@@ -1,0 +1,328 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4018.5">
+  <POU Name="HLI3_SetAxisRelease" Id="{6439bd2c-d5c3-40ea-94e0-bc864b03fa1d}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK HLI3_SetAxisRelease
+VAR_INPUT
+	bEnable: BOOL;
+	nHliAxisIdx: INT;
+END_VAR
+VAR_OUTPUT
+	bAxisIsReady: BOOL;
+	bAxisIsEnabled: BOOL;
+	bAxisHasError: BOOL;
+	nDriveType: UDINT;
+	bError: BOOL;
+	nErrorId: UDINT;
+	nErrorState: UINT;
+END_VAR
+VAR
+	bReadyForPowerOn: BOOL;
+	bReadyForControlLoopOn: BOOL;
+	nHliAxisIdxOld: INT;
+	nState: UINT;
+	nStateOld: UINT;
+	tActiveTimeOut: TIME := TIME#5s0ms;
+	wDriveState: WORD;
+	fbTonTimeOut: TON;
+END_VAR
+VAR CONSTANT
+	ERR_INVALID_AXIS_IDX: UDINT := 10000;
+	ERR_UNSUPPORTED_DRIVE: UDINT := 10001;
+	ERR_TIME_OUT: UDINT := 10002;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(****************************************************************************************)
+(* POU:		HLI3_SetAxisRelease                      									*)
+(* Type:	Function block																*)
+(* Author: 	HR																			*)
+(* Date: 	14/01/10																	*)
+(* Rev.: 	1.0																			*)
+(* ------------------------------------------------------------------------------------ *)
+(* Author: 	TV																			*)
+(* Date: 	14/04/11																	*)
+(* Rev.: 	1.1																			*)
+(* 			Implementation for terminal drives											*)
+(* ------------------------------------------------------------------------------------ *)
+(* Author: 	HR																			*)
+(* Date: 	14/08/27																	*)
+(* Rev.: 	1.2																			*)
+(* 			Fixed terminal drive issue --> According to the ISG docs terminal drives	*)
+(*			are supported by means of the torque permission control unit only! There-	*)
+(*			fore this has to be switched by the 'bEnable' input. Tested with EL7041		*)
+(* ------------------------------------------------------------------------------------ *)
+(* Author: 	MiB																			*)
+(* Date: 	16/04/06																	*)
+(* Rev.: 	1.2																			*)
+(* 			Enable follow up only for non simulation axis								*)
+(* ------------------------------------------------------------------------------------ *)		
+(* Desc:	Sets axes release and follow up mode using the axis specific control units 	*)
+(*			'.lr_mc_control.torque_permission', 'lr_mc_control.release_feedhold',		*)
+(*			'lr_mc_control.drive_on' and 'lr_mc_control.follow_up' depending on the 	*)
+(*			subsequent drive type (e.g. Sercos,...). The following drive type are 		*)
+(*			supported:																	*)
+(*				+ Sercos and SoE														*)
+(*				+ CanOpen and CoE (according to CiA402 drive profile)					*)
+(*				+ Simulation drives														*)
+(*																						*)
+(*			This function block may raise the following error numbers					*)
+(*				+ 10000	--> Invalid 'nHliAxisIdx'										*)
+(*				+ 10001 --> Unsupported drive type										*)
+(*				+ 10002 --> Time out while setting axis release							*)
+(*																						*)
+(*			IMPORTANT: This function block does not implement any state specific en- or	*)
+(*			disabling of the drive. It simply tries to enable the subsequent axis as	*)
+(*			long as input variable 'bEnable' is TRUE. That means it won´t disable the 	*)
+(*			drive in case of any errors or loss prerequisited operation conditions (e.g.*)
+(*			power supply). It is assumed that the drive will handle those situations	*)
+(*			internally!																	*)
+(*				  																		*)
+(* 			Tested with following drives:												*)
+(*																						*)
+(*			VENDOR				MAKE					FW-VERSION			COM-SYS 	*)
+(* 			------				----					----------			-------		*)
+(* 			Beckhoff			AX5xxx					2.03 (B26)			SoE			*)
+(* 			Beckhoff			EL7201					03					CoE			*)
+(*			Beckhoff			EL7041					10					Terminal	*)	
+(* 			ELMO				Gold					01.01.07.12			CoE			*)
+(****************************************************************************************)
+
+(****************************************************************************************)
+(*									Check axis index									*)
+(****************************************************************************************)
+IF NOT HLI3_CheckAxisValid(nHliAxisIdx) THEN
+	bError		:= TRUE;
+	nErrorId	:= ERR_INVALID_AXIS_IDX;
+	RETURN;
+END_IF
+
+(****************************************************************************************)
+(*										Clear errors									*)
+(****************************************************************************************)
+IF bError THEN
+	CASE nErrorId OF
+	 (* -------------------------------------------------------------------------------	*)
+	 ERR_INVALID_AXIS_IDX:
+	 	(* Reset invalid HLI axis index error as soon as this line has been hit!		*)
+		AC_ClearError();
+		
+	(* -------------------------------------------------------------------------------	*)
+	 ERR_UNSUPPORTED_DRIVE:
+		(* Reset unsupported drive type error in case the HLI axis index has been 		*)
+		(* changed!																		*)
+		IF (nHliAxisIdx <> nHliAxisIdxOld) THEN
+			nHliAxisIdxOld	:= nHliAxisIdx;
+			AC_ClearError();
+		END_IF
+ 
+	(* -------------------------------------------------------------------------------	*) 
+	 ERR_TIME_OUT:
+ 		(* Will be resetted individually by each drive type specific action!			*)
+	END_CASE
+END_IF
+
+(****************************************************************************************)
+(*								Switch follow up mode 									*)
+(****************************************************************************************)
+IF gpAx[nHliAxisIdx]^.lr_state.drive_type_r = 4 THEN   (* type == 4 -> simulation axis -> don't enable follow up mode *)
+	gpAx[nHliAxisIdx]^.lr_mc_control.follow_up.command_w := FALSE;
+ELSE
+	gpAx[nHliAxisIdx]^.lr_mc_control.follow_up.command_w := NOT bEnable;
+END_IF
+
+(****************************************************************************************)
+(*						Copy axis state information to local variables					*)
+(****************************************************************************************)
+wDriveState				:= gpAx[nHliAxisIdx]^.lr_state.native_drive_state_r;
+nDriveType				:= gpAx[nHliAxisIdx]^.lr_state.drive_type_r;
+bAxisHasError			:= gpAx[nHliAxisIdx]^.lr_state.error_r;
+bReadyForPowerOn		:= gpAx[nHliAxisIdx]^.lr_state.ready_for_power_on_r;
+bReadyForControlLoopOn	:= gpAx[nHliAxisIdx]^.lr_state.ready_for_control_loop_on_r;
+
+(****************************************************************************************)
+(*							 Constant timeout implementation							*)
+(****************************************************************************************)
+IF (nStateOld <> nState) THEN
+	nStateOld	:= nState;
+	fbTonTimeOut(IN := FALSE);
+END_IF
+
+fbTonTimeOut
+	(IN := TRUE,
+	 PT := tActiveTimeOut
+	);
+
+(****************************************************************************************)
+(*								Drive type specific axis release						*)
+(****************************************************************************************)
+CASE nDriveType OF
+	HLI_DRIVE_CANOPEN	: AC_CanOpenDrive();
+	HLI_DRIVE_SERCOS	: AC_SercosDrive();
+	HLI_DRIVE_SIMU		: AC_SercosDrive();
+	HLI_DRIVE_TERMINAL  : AC_TerminalDrive();
+ELSE
+	bError				:= TRUE;
+	nErrorId			:= ERR_UNSUPPORTED_DRIVE;
+END_CASE
+
+]]></ST>
+    </Implementation>
+    <Action Name="AC_TerminalDrive" Id="{631adf28-2430-44d9-a0be-435dc72ed969}">
+      <Implementation>
+        <ST><![CDATA[(****************************************************************************************)
+(*										Status data										*)
+(****************************************************************************************)
+(* Since there is no feedback available on the HLI axis enabled state wiöö be emulated!	*)
+bAxisIsEnabled	:= bEnable;
+bAxisIsReady	:= FALSE;
+ 
+(****************************************************************************************)
+(*										Command data									*)
+(****************************************************************************************)
+(* Terminal drives are supported by the torque permission control unit only!			*)
+gpAx[nHliAxisIdx]^.lr_mc_control.torque_permission.command_w	:= bEnable;
+gpAx[nHliAxisIdx]^.lr_mc_control.release_feedhold.command_w		:= FALSE;
+gpAx[nHliAxisIdx]^.lr_mc_control.drive_on.command_w				:= FALSE;		
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="AC_ClearError" Id="{8ec0eee4-3f39-481e-923a-124ffb9ed175}">
+      <Implementation>
+        <ST><![CDATA[THIS^.bError		:= FALSE;
+THIS^.nErrorId		:= 0;
+THIS^.nErrorState	:= 0;]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="AC_CanOpenDrive" Id="{978763d2-742b-4890-ad2c-53018fe90d08}">
+      <Implementation>
+        <ST><![CDATA[(****************************************************************************************)
+(*										Status data										*)
+(****************************************************************************************)
+(* Ready state is signalled if the drive´s state is unequal to 'Not ready to switch on'	*)
+bAxisIsReady	:= bReadyForControlLoopOn; 
+ 
+(* Enabled state is derived from state 'Operation enabled' (information provided via	*)
+(* HLI) and from status word bit no. 01 (switched on)!									*)
+bAxisIsEnabled	:= bReadyForControlLoopOn AND bReadyForPowerOn AND wDriveState.1;
+
+(****************************************************************************************)
+(*						Command data (CanOpen requires a state machine)					*)
+(****************************************************************************************)
+(* Switch back to initial state in case the user want´s to disable the drive or an axis	*)
+(* error occured, which requires a new srun of the sequence!							*)
+IF NOT bEnable OR wDriveState.3 THEN
+	nState				:= 0;
+END_IF
+
+CASE nState OF
+ (* -----------------------------------------------------------------------------------	*)
+ 0: (* INIT *)
+ 	gpAx[nHliAxisIdx]^.lr_mc_control.torque_permission.command_w	:= FALSE;
+ 	gpAx[nHliAxisIdx]^.lr_mc_control.release_feedhold.command_w		:= FALSE;
+	
+	(* Start sequence in case the user wants to enable the drive and there is no error.	*)
+ 	IF bEnable AND NOT wDriveState.3 AND bAxisIsReady THEN
+		(* Set time out once! *)
+		tActiveTimeOut	:= T#2S;	
+	
+		// Switch on disabled???
+		IF wDriveState.6 THEN
+			nState		:= 10;
+		//Ready to switch on???
+		ELSIF wDriveState.0 THEN
+			nState		:= 20;
+		//Switched on???
+		ELSIF wDriveState.1 THEN
+			nState		:= 30;
+		//Operation enabled???
+		ELSIF wDriveState.2 THEN
+			nState		:= 40;
+		END_IF
+	END_IF
+	
+ (* -----------------------------------------------------------------------------------	*)
+ 10: (* DRIVE IN 'Switch on disabled' STATE *)
+ 	gpAx[nHliAxisIdx]^.lr_mc_control.drive_on.command_w				:= TRUE;
+ 
+	IF wDriveState.0 THEN
+		nState			:= 20; 
+	ELSIF fbTonTimeOut.Q THEN
+		bError			:= TRUE;
+		nErrorId		:= ERR_TIME_OUT;
+		nErrorState		:= nState;
+		nState			:= 0;
+	END_IF
+	
+(* -----------------------------------------------------------------------------------	*)
+ 20: (* DRIVE IN 'Ready to switch on' STATE *)
+ 	gpAx[nHliAxisIdx]^.lr_mc_control.torque_permission.command_w	:= TRUE;
+	
+	IF wDriveState.1 THEN
+		nState			:= 30; 
+	ELSIF fbTonTimeOut.Q THEN
+		bError			:= TRUE;
+		nErrorId		:= ERR_TIME_OUT;
+		nErrorState		:= nState;
+		nState			:= 0;
+	END_IF
+	
+ (* -----------------------------------------------------------------------------------	*)
+ 30: (* DRIVE IN 'Switched on' STATE *)
+ 	gpAx[nHliAxisIdx]^.lr_mc_control.release_feedhold.command_w		:= TRUE;
+	
+	IF wDriveState.2 THEN
+		nState			:= 40; 
+	ELSIF fbTonTimeOut.Q THEN
+		bError			:= TRUE;
+		nErrorId		:= ERR_TIME_OUT;
+		nErrorState		:= nState;
+		nState			:= 0;
+	END_IF
+	
+ (* -----------------------------------------------------------------------------------	*)
+ 40: (* DRIVE IN 'Operation enabled' STATE *)
+	AC_ClearError();
+	
+END_CASE]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="AC_SercosDrive" Id="{9f79cd16-30ca-49dc-b87f-3fd3480ba70d}">
+      <Implementation>
+        <ST><![CDATA[(****************************************************************************************)
+(*										Status data										*)
+(****************************************************************************************)
+(* Ready state is derived from status word bit 15!										*)
+bAxisIsReady	:= bReadyForControlLoopOn; 
+ 
+(* Enabled state is derived from status word bits 14 and 15. IMPORTANT: In order to 	*)
+(* take status word bit 03 into account  - which represents the time needed for 		*)
+(* releasing the brake - axis specific parameter 'antr.sercos.evaluate_drive_follows_	*)
+(* cmd' has to be set!!!																*) 
+bAxisIsEnabled	:= bReadyForControlLoopOn AND bReadyForPowerOn;
+ 
+(****************************************************************************************)
+(*										Command data									*)
+(****************************************************************************************)
+(* ControlBit no. 14 is set statically in order to provide torque supported stopping of	*)
+(* in case someone disables the axis during movement!									*) 
+gpAx[nHliAxisIdx]^.lr_mc_control.torque_permission.command_w	:= TRUE;
+
+(* Only control bits 13 and 15 are being (re-)set in order to achieve axis enabling!	*)
+gpAx[nHliAxisIdx]^.lr_mc_control.release_feedhold.command_w		:= bEnable;
+gpAx[nHliAxisIdx]^.lr_mc_control.drive_on.command_w				:= bEnable;		
+
+ 
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Action>
+  </POU>
+</TcPlcObject>

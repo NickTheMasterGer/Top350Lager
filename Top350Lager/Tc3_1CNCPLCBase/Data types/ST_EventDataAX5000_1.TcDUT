@@ -1,0 +1,13 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="ST_EventDataAX5000_1" Id="{94853b2d-19cc-4cbd-9a0d-30e86a3e5198}">
+    <Declaration><![CDATA[TYPE ST_EventDataAX5000_1 :
+STRUCT
+	nDiagNumber: UDINT;
+	nAxisId: UDINT;
+	sChannel: STRING(120);
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,75 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI3_SetAxisSpindleStopAtProgramEnd" Id="{14a9916c-6422-43d4-add3-29c8c01704a0}">
+    <Declaration><![CDATA[FUNCTION_BLOCK HLI3_SetAxisSpindleStopAtProgramEnd
+VAR_INPUT
+	bExecute: BOOL;
+	bSpindelStopAtProgramEnd: BOOL;
+	nHliAxisIdx: INT;
+END_VAR
+VAR_OUTPUT
+	bBusy: BOOL;
+END_VAR
+VAR
+	/// Index of axis specific HLI area 
+	nHliAxIfcIdx: INT;
+	nState: INT;
+	fbRTrigExecute: R_TRIG;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(****************************************************************************************)
+(* POU:		HLI_SetAxisSpindleStopAtProgramEnd                      					*)
+(* Type:		FB																		*)
+(* Author: 	HR                                              							*)
+(* Date: 	24.01.11																	*)
+(* Rev.: 	1.0                                               							*)
+(* ------------------------------------------------------------------------------------ *)
+(* Desc:	Check wether the axis specified by input 'nLogAxisNo' is a spindle and 		*)
+(*			(re-) sets (depending on the state of input 'bSpindelStopAtProgramEnd') 	*)
+(*			the spindle stop feature on the HLI.										*)
+(****************************************************************************************)
+
+(****************************************************************************************)
+(*								Check logical axis no									*)
+(****************************************************************************************)
+IF NOT HLI3_CheckAxisValid(nHliAxisIdx := nHliAxisIdx) THEN	
+	RETURN;
+END_IF
+(****************************************************************************************)
+(*									Build trigger										*)
+(****************************************************************************************)
+fbRTrigExecute
+	(CLK := bExecute);
+
+(****************************************************************************************)
+(*								   (Re-)set sequence									*)
+(****************************************************************************************)
+CASE nState OF
+ (* ----------------------------------------------------------------------------------- *)
+ 0: (* INIT STATE  *)
+  	bBusy			:= FALSE;
+
+	IF fbRTrigExecute.Q THEN
+		bBusy		:= TRUE;
+		nState		:= 10;
+	END_IF
+
+ (* ----------------------------------------------------------------------------------- *)
+ 10: (* ENABLE THE CONTROL UNIT IF THE AXIS IS A SPINDLE *)
+
+	IF gpAx[nHliAxisIdx]^.ipo_state.spindle_axis_r THEN
+		gpAx[nHliAxisIdx]^.ipo_mc_control.spdl_stop_at_prog_end.enable_w := TRUE;
+		nState 		:= 20;
+	ELSE
+		nState 		:= 0;
+	END_IF
+
+ (* ---------------------------------------------------------------------------------- *)
+ 20: (* (RE-) SET SPINDLE STOP FUNCTION *)
+	gpAx[nHliAxisIdx]^.ipo_mc_control.spdl_stop_at_prog_end.command_w := bSpindelStopAtProgramEnd;
+	nState 			:= 0;
+END_CASE]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

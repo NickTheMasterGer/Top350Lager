@@ -1,0 +1,31 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.23">
+  <POU Name="HLI3_GetLogAxisId" Id="{b97333d2-d89a-4c72-b2d8-3e0b353fa634}">
+    <Declaration><![CDATA[FUNCTION HLI3_GetLogAxisId : INT
+VAR_INPUT
+	nHliAxisIdx: INT;
+END_VAR
+VAR
+	i: INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: HLI3_GetLogAxisId                            	 *)
+(* --------------------------------------------------------- *)
+(*   Desc: returns the Log. Axis Idx for a given HLI Index   *)
+(*   Author: TV                                              *)
+(*   Date: 22.01.2014                                        *)
+(*   Rev.: 1.0                                               *)
+(* ========================================================= *)
+HLI3_GetLogAxisId := -1;
+IF NOT HLI3_CheckAxisValid(nHliAxisIdx := nHliAxisIdx) THEN
+	RETURN;
+END_IF
+
+HLI3_GetLogAxisId := UINT_TO_INT(gpAx[nHliAxisIdx]^.head.log_ax_nr_r);
+	
+]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

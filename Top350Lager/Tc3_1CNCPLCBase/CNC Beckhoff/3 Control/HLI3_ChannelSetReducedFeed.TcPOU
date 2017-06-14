@@ -1,0 +1,30 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI3_ChannelSetReducedFeed" Id="{03eb1211-42dc-4b3d-b0e1-de00b1870ad1}">
+    <Declaration><![CDATA[FUNCTION HLI3_ChannelSetReducedFeed : BOOL
+VAR_INPUT
+	/// Number of channel 
+	nChanIdx: INT;
+	bReducedFeed: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: HLI_ChannelSetReducedFeed                         *)
+(* --------------------------------------------------------- *)
+(*   Desc:                                                   *)
+(* Author: MK,MiB                                            *)
+(*   Date: 20.11.2012                                        *)
+(*   Rev.: 1.1                                               *)
+(* ========================================================= *)
+
+
+HLI3_ChannelSetReducedFeed := FALSE;
+IF NOT HLI3_CheckChannelValid(nChannel := nChanIdx) THEN
+	RETURN;
+END_IF
+gpCh[nChanIdx]^.bahn_mc_control.reduced_speed.command_w := bReducedFeed;
+HLI3_ChannelSetReducedFeed := TRUE;]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

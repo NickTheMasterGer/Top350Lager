@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4018.2">
+  <DUT Name="ST_MachData" Id="{177669cd-67bc-4599-a64a-81a705e3c51b}">
+    <Declaration><![CDATA[TYPE ST_MachData :
+STRUCT
+	/// @1:Aktivflag @11:2
+	bAktiv: BOOL;
+	///@1: Wert 1 @11:2
+	nWert12: INT;
+	///@1: Wert 2 @11:2
+	nWert2: INT;
+	///@1: Auftrags-ID @11:2
+	nAuftragId: DINT;
+	///@1:ProdHandle @11:2
+	nProdHandle: DINT;
+	///@1:Barcode @11:2
+	sBarcode: STRING;
+	///@1:Zeit
+	Zeit: TIME;
+	///Dateiname
+	sFileName: STRING;
+	///Sollstückzahl
+	nSetPiece: DINT;
+	///Iststückzahl
+	nActPiece: DINT;
+	///Name-Unterprogramm1
+	sUProg1: STRING;
+	///Name-Unterprogramm2
+	sUProg2: STRING;
+	///Länge
+	fLength: LREAL;
+	///Breite
+	fWidth: LREAL;
+	///Dicke
+	fHeigth: LREAL;
+	/// @1: maschinenspezifische Daten @11:2
+	arrMaschine: ARRAY[1..2] OF ST_HMIPDatMaschine;
+	///@1: Handfunktionen @6:1  @11:1
+	manualFuntction: ST_HMI_Manual;
+	///@1: Handfunktionen2 @6:1  @11:1
+	manualFuntction2: ST_HMI_Manual; 
+ 
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

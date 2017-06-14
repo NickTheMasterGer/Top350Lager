@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4019.0">
+  <POU Name="FAST" Id="{16c202d0-b697-4d74-8856-0055624c8fd5}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM FAST
+VAR
+	nChan : INT;
+	MOS_TS: INT;
+END_VAR
+
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(****************************************************************************************)
+(*	  							Wait for HLI initialization								*)
+(****************************************************************************************)
+IF NOT CNCSystem.bHLIInit THEN
+	RETURN;
+END_IF
+
+(* Programm call for MOS_TS M functions *)
+// PRG_FastMFunctions();
+
+(* CNC Watchdog mechanism *)
+FOR nChan := 0 TO MAX_USED_CHANNEL_IDX DO
+	IF (HLI3_CheckChannelValid(nChan)) THEN	
+		HLI3_SetPLCAlive(nChanIdx :=  nChan);
+		//HLI3_CheckCNCAlive(nChanIdx := nChan);
+	END_IF
+END_FOR]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

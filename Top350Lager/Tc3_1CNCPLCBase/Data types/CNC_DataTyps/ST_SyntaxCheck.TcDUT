@@ -1,0 +1,12 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="ST_SyntaxCheck" Id="{c475e773-956e-4fc7-80b1-9691d464a135}">
+    <Declaration><![CDATA[TYPE ST_SyntaxCheck :
+STRUCT
+	/// SyntaxCheck 
+	nType: INT;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

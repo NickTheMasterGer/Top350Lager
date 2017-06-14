@@ -1,0 +1,17 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="ST_TechnoAttributeData" Id="{517f5019-3479-4ef1-ad35-0368b59efd99}">
+    <Declaration><![CDATA[TYPE ST_TechnoAttributeData :
+STRUCT
+	bState_rw: BOOL;
+	nFunctionNumber_r: UDINT;
+	nTime_r: DINT;
+	nBlockNumber_r: UDINT;
+	nPrgLineNumber_r: UDINT;
+	nArgument_r: DINT;
+	bRes: BOOL;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

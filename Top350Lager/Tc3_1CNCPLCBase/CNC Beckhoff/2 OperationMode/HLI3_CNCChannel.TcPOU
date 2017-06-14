@@ -1,0 +1,461 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4018.5">
+  <POU Name="HLI3_CNCChannel" Id="{db4c6fa7-4d6a-42b0-8f5a-14a632b2eb72}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK HLI3_CNCChannel
+VAR_INPUT
+	/// index of channel 
+	nChanIdx: INT;
+	/// must be xxx.nc 
+	sProgramName: STRING(HLI_IMCM_MODE_STATE_PARAM_STRL);
+	/// the MDI string 
+	sMDIString: STRING(HLI_IMCM_MODE_STATE_PARAM_STRL);
+	/// static signal 
+	bBackwardMotion: BOOL;
+	/// static signal 
+	bFeedHold: BOOL;
+	/// static signal 
+	bReducedFeed: BOOL;
+	/// static signal 
+	bSingleBlock: BOOL;
+	/// static signal 
+	bPrgBlockIgnore: BOOL;
+	/// static signal 
+	bM01Stop: BOOL;
+	/// static signal 
+	nSyntaxCheck: DINT;
+	/// initi parameter for manual mode
+	sManualInitString	     : STRING;
+END_VAR
+VAR_IN_OUT
+	/// please only a flank 
+	bModeStandby: BOOL;
+	/// please only a flank 
+	bModeAutomatic: BOOL;
+	/// please only a flank 
+	bModeManual: BOOL;
+	/// please only a flank 
+	bModeMDI: BOOL;
+	/// please only a flank 
+	bModeReference: BOOL;
+	/// please only a flank 
+	bStateSelect: BOOL;
+	/// please only a flank 
+	bStateReady: BOOL;
+	/// please only a flank 
+	bStateStart: BOOL;
+	/// please only a flank 
+	bStateStop: BOOL;
+	/// please only a flank 
+	bStateReset: BOOL;
+	/// please only a flank 
+	bDoSingleBlock: BOOL;
+END_VAR
+VAR
+	bGoToActive	: BOOL;
+	/// Pointer to HLI Motion Control Unit 
+	pUnit: POINTER TO MC_CONTROL_MCM_MODE_STATE_UNIT;
+	/// Pointer to HLI channel command 
+	pCommand: POINTER TO HLI_PROC_TRANS_TO_MODE_STATE;
+	/// Pointer to channel control structure 
+	pChannel: POINTER TO ST_CncChannel;
+	ChannelMHTFunction: HLI3_QuitChannelMHTFunction;
+	/// Current Mode of Operation Modes;
+	currentMode: UDINT;
+	/// Current State of Operation Modes;
+	currentState: UDINT;
+	idx: INT;
+	bEndOfManualMode: BOOL;
+	bCheckOpModeFirst: BOOL;
+	fbRTrigReset: R_TRIG;
+	bResetRequest: BOOL;
+	ChannelResetRequest: HLI3_ChannelResetRequest;
+	nChan: INT;
+	nStateAutoMDIStart: INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*     FB: HLI_CNCChannel                                    *)
+(* --------------------------------------------------------- *)
+(*   Desc:                                                   *)
+(*   Author: MK ,MiB, TV, Rch                                *)
+(*   Date: 2017.05.08                                        *)
+(*   Rev.: 1.6                                               *)
+(*         1.2 Before "start" the state is swicthed to 		 *)
+(*				"Selected" and "Ready" to ensure that the    *)	
+(*				actual selected program will start 			 *)
+(*		   1.3  BugFix : nChanNo at HLI3_ChannelModeMDI()    *)
+(*         1.4  Implement state switch to "selected" and "ready"  *)         
+(*		   1.5  Channel reset via commanding state 			 *)
+(*              RESETTING directly							 *)  
+(*		   1.6  Optimized Channel reset via commanding state *)
+(*				RESETTING directly						     *)
+(*		   1.7  Init Paramerer for Manual mode as input parameter*)
+(* ========================================================= *)
+
+IF NOT HLI3_CheckChannelValid(nChannel := nChanIdx) THEN
+	RETURN;
+END_IF
+
+
+(* handle reset request *)
+fbRTrigReset
+	(CLK := bStateReset);
+	
+IF fbRTrigReset.Q THEN
+	nStateAutoMDIStart := 0;
+END_IF
+
+(* set up pointer *)
+pUnit    := ADR(gpCh[nChanIdx]^.channel_mc_control.mode_and_state);
+pCommand := ADR(pUnit^.command_w);
+
+
+(* ************************************* *)
+(*  Motion-Control                       *)
+(* ************************************* *)
+(* Backward Motion *)
+HLI3_ChannelSetBackwardMotion(nChanIdx:=nChanIdx, bBackwardMotion:=bBackwardMotion);
+
+(* Program Block Ignore *)
+HLI3_ChannelSetProgramBlockIgnore(nChanIdx:=nChanIdx, bPrgBlockIgnore:=bPrgBlockIgnore);
+
+(* Feed Hold *)
+HLI3_ChannelSetFeedHold(nChanIdx:=nChanIdx, bFeedHold:=bFeedHold);
+
+(* Single Step *)
+HLI3_ChannelSetSingleBlock(nChanIdx:=nChanIdx, bSingleBlock:=bSingleBlock);
+
+(* Reduced Feed *)
+HLI3_ChannelSetReducedFeed(nChanIdx:=nChanIdx, bReducedFeed:=bReducedFeed);
+
+(* Syntax Check *)
+gpCh[nChanIdx]^.decoder_mc_control.execution_mode.command_w := nSyntaxCheck;
+
+(* Optional stop M01 *)
+gpCh[nChanIdx]^.bahn_mc_control.m01_stop_enable.command_w := bM01Stop;
+
+
+(* ************************************ *)
+(*  MHT-Function                        *)
+(* ************************************ *)
+(* Reset all M- and H-Functions whenn 	*)
+(* the channel gets resetted			*)
+IF (pChannel > 0) THEN
+	IF (pChannel^.ActState = HLI_IMCM_PROCESS_RESETTING) THEN
+		HLI3_ChannelResetMFunctions(nChanIdx);
+		HLI3_ChannelResetHFunctions(nChanIdx);
+	END_IF
+END_IF
+
+(* MHT-Function, channel *)
+ChannelMHTFunction(nChanIdx:=nChanIdx);
+
+(* ************************************* *)
+(*  Channel Status Info and error        *)
+(* ************************************* *)
+HLI3_GetChannelStatusInfo(nChanIdx:=nChanIdx);
+HLI3_GetChannelError(nChanIdx:=nChanIdx);
+
+(* ************************************* *)
+(*  do single stepping                   *)
+(* ************************************* *)
+(* Achtung: hier noch anpassen, nur in Abhaengigkeit vom aktuellen Status den Start setzen *)
+IF bDoSingleBlock THEN
+	bDoSingleBlock := FALSE;
+	bStateStart 	:= TRUE;
+END_IF
+
+(* ************************************* *)
+(*  Operation Modes                      *)
+(* ************************************* *)
+(* Target modes and states *)
+pChannel := ADR(CNCSystem.Channel[nChanIdx]);
+OpModes();
+
+(* OperationMode Standby *)
+IF pChannel^.Mode.Standby = TRUE THEN
+	HLI3_ChannelModeStandby(ProgramName:=sProgramName, pUnit:=pUnit, pCommand:=pCommand, pChannel:=pChannel);
+END_IF
+
+(* OperationMode Auto *)
+IF pChannel^.Mode.Auto = TRUE THEN
+	HLI3_ChannelModeAuto(ProgramName:=sProgramName, pUnit:=pUnit, pCommand:=pCommand, pChannel:=pChannel);
+END_IF
+
+(* OperationMode MDI *)
+IF pChannel^.Mode.MDI THEN
+	(*sProgramName := PLCCncMDIString;*)
+	HLI3_ChannelModeMDI(pMDIString:=ADR(sMDIString), pUnit:=pUnit, pCommand:=pCommand, pChannel:=pChannel);
+END_IF
+
+(* OperationMode Reference *)
+//IF pChannel^.Mode.REFERENCE THEN TC3HR
+IF pChannel^.Mode.Homing THEN
+	sProgramName := '';	(* we choose the default program: rpf.nc *)
+	HLI3_ChannelModeReference(sRefPosString:=sProgramName, pUnit:=pUnit, pCommand:=pCommand, pChannel:=pChannel);
+END_IF
+
+(* OperationMode Manual *)
+IF pChannel^.Mode.Manual THEN
+	bEndOfManualMode := FALSE;
+	HLI3_ChannelModeManual(pUnit:=pUnit, pCommand:=pCommand, pChannel:=pChannel, sManualInitString := sManualInitString);
+END_IF
+
+(* end of manual mode *)
+IF (pChannel^.Mode.Standby
+OR pChannel^.Mode.Auto
+OR pChannel^.Mode.MDI
+//OR pChannel^.Mode.REFERENCE) THEN TC3HR
+OR pChannel^.Mode.Homing) THEN
+	bEndOfManualMode := TRUE;
+END_IF
+
+(* Reset *)
+HLI3_ChannelReset(nChanIdx:=nChanIdx);							(* channel *)
+FOR idx := 0 TO UDINT_TO_INT(gNrAx) DO							(* axis *)
+	HLI3_AxisReset(nChanNo:=nChanIdx+1, nHliAxisIdx:=idx);
+END_FOR]]></ST>
+    </Implementation>
+    <Action Name="AutoMDIStart" Id="{10434a5c-5f2b-4dc4-92eb-ce3d6baf63b3}">
+      <Implementation>
+        <ST><![CDATA[
+
+
+CASE nStateAutoMDIStart OF
+	0:		;(* IDLE *)
+	
+	10: (* swicth to selected *)
+		pChannel^.State.Selected := TRUE;
+		nStateAutoMDIStart := nStateAutoMDIStart +10;
+		
+	20: (* wait for selected *)
+		IF (pChannel^.ActState =  HLI_IMCM_PROCESS_SELECTED) THEN
+			pChannel^.State.Ready := TRUE;
+			nStateAutoMDIStart := nStateAutoMDIStart +10;
+		END_IF
+	30: (* Wait for ready and then start*)
+		IF (pChannel^.ActState =  HLI_IMCM_PROCESS_READY) THEN
+			pChannel^.State.Start := TRUE; 
+			nStateAutoMDIStart := 0;
+		END_IF
+	
+END_CASE]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="OpModes" Id="{be4d7863-299e-4582-85b3-fcd44bc44e69}">
+      <Implementation>
+        <ST><![CDATA[(*************************************************)
+(* Restore internal state at first run           *)
+(* after PLC reset                               *)
+(*************************************************)
+
+IF bCheckOpModeFirst = FALSE THEN
+	bCheckOpModeFirst := TRUE;
+	currentMode := HLI3_GetChannelMode(nChanIdx:=nChanIdx);
+	IF currentMode = HLI_IMCM_STANDBY_MODE THEN
+		pChannel^.Mode.Standby := TRUE;
+	END_IF
+	IF currentMode = HLI_IMCM_AUTOMATIC_MODE THEN
+		pChannel^.Mode.Auto := TRUE;
+	END_IF
+	IF currentMode = HLI_IMCM_MDI_MODE THEN
+		pChannel^.Mode.MDI := TRUE;
+	END_IF
+	IF currentMode = HLI_IMCM_MANUAL_MODE THEN
+		pChannel^.Mode.Manual := TRUE;
+	END_IF
+	IF currentMode = HLI_IMCM_REFERENCE_MODE THEN
+		//pChannel^.Mode.REFERENCE := TRUE; TC3HR
+		pChannel^.Mode.Homing := TRUE;
+	END_IF
+END_IF
+
+
+(*************************************************)
+(* Operation Modes                               *)
+(*************************************************)
+
+IF bModeStandby THEN
+	bModeStandby := FALSE;
+	pChannel^.Mode.Standby		:= TRUE;
+	pChannel^.Mode.Auto			:= FALSE;
+	pChannel^.Mode.MDI			:= FALSE;
+	pChannel^.Mode.Manual		:= FALSE;
+	pChannel^.Mode.Homing		:= FALSE;
+
+
+	pChannel^.State.Selected	:= TRUE;
+END_IF
+
+IF bModeAutomatic THEN
+	bModeAutomatic 				:= FALSE;
+	bGoToActive					:= FALSE;
+	pChannel^.Mode.Standby		:= FALSE;
+	pChannel^.Mode.Auto			:= TRUE;
+	pChannel^.Mode.MDI			:= FALSE;
+	pChannel^.Mode.Manual		:= FALSE;
+	pChannel^.Mode.Homing		:= FALSE;
+
+	pChannel^.State.Selected	:= TRUE;
+END_IF
+
+IF bModeMDI THEN
+	bModeMDI := FALSE;
+	bGoToActive					:= FALSE;
+	pChannel^.Mode.Standby		:= FALSE;
+	pChannel^.Mode.Auto			:= FALSE;
+	pChannel^.Mode.MDI			:= TRUE;
+	pChannel^.Mode.Manual		:= FALSE;
+	pChannel^.Mode.Homing		:= FALSE;
+
+	pChannel^.State.Selected	:= TRUE;
+END_IF
+
+IF bModeManual THEN
+	bModeManual := FALSE;
+	pChannel^.Mode.Standby		:= FALSE;
+	pChannel^.Mode.Auto			:= FALSE;
+	pChannel^.Mode.MDI			:= FALSE;
+	pChannel^.Mode.Manual		:= TRUE;
+	pChannel^.Mode.Homing		:= FALSE;
+
+	pChannel^.State.Start		:= TRUE;
+END_IF
+
+IF bModeReference THEN
+	bModeReference := FALSE;
+	bGoToActive					:= FALSE;
+	pChannel^.Mode.Standby		:= FALSE;
+	pChannel^.Mode.Auto			:= FALSE;
+	pChannel^.Mode.MDI			:= FALSE;
+	pChannel^.Mode.Manual		:= FALSE;
+	pChannel^.Mode.Homing		:= TRUE;
+	
+	pChannel^.State.Start		:= TRUE;
+END_IF
+
+
+
+(*************************************************)
+(* Operation States                              *)
+(*************************************************)
+
+currentMode := HLI3_GetChannelMode(nChanIdx:=nChanIdx);
+currentState := HLI3_GetChannelState(nChanIdx:=nChanIdx);
+
+CASE currentMode OF
+	(*-------------------------------------------------------------------*)
+	HLI_IMCM_STANDBY_MODE:
+		IF bStateReset THEN
+			pChannel^.Mode.Standby := TRUE;
+			pChannel^.State.Reset := TRUE;
+		END_IF
+
+	(*-------------------------------------------------------------------*)
+	HLI_IMCM_AUTOMATIC_MODE:
+		IF bStateStart THEN  (* replaced a simple 'start' by a sequence which switches the state to selected and ready*)
+			IF currentState <> HLI_IMCM_PROCESS_HOLD AND currentState <> HLI_IMCM_PROCESS_ACTIVE THEN
+				nStateAutoMDIStart := 10;
+			ELSE
+				pChannel^.State.Start := TRUE; 
+			END_IF					   	
+		END_IF
+		IF nStateAutoMDIStart <> 0 THEN
+			AutoMDIStart();
+		END_IF
+
+		IF bStateStop AND currentState <> HLI_IMCM_PROCESS_DESELECTED THEN
+			pChannel^.State.Stop := TRUE;
+		END_IF
+
+		IF bStateReady THEN
+			pChannel^.State.Ready := TRUE;
+		END_IF
+
+		IF bStateReset THEN
+			pChannel^.State.Reset := TRUE;
+		END_IF
+		
+		IF bStateSelect THEN
+			pChannel^.State.Selected := TRUE;
+		END_IF		
+
+	(*-------------------------------------------------------------------*)
+	HLI_IMCM_MDI_MODE:
+		IF bStateStart THEN
+			IF currentState <> HLI_IMCM_PROCESS_HOLD AND currentState <> HLI_IMCM_PROCESS_ACTIVE THEN
+				nStateAutoMDIStart := 10;
+			ELSE
+				pChannel^.State.Start := TRUE; 
+			END_IF
+		END_IF
+		
+		IF nStateAutoMDIStart <> 0 THEN
+			AutoMDIStart();
+		END_IF
+		
+		IF bStateStop AND currentState <> HLI_IMCM_PROCESS_DESELECTED THEN
+			pChannel^.State.Stop := TRUE;
+		END_IF
+
+		IF bStateSelect THEN
+			pChannel^.State.Selected := TRUE;
+		END_IF
+		
+		IF bStateReady THEN
+			pChannel^.State.Ready := TRUE;
+		END_IF
+
+		IF bStateReset THEN
+			pChannel^.State.Reset := TRUE;
+		END_IF
+
+	(*-------------------------------------------------------------------*)
+	HLI_IMCM_MANUAL_MODE:
+		IF bStateStart OR ((currentState = HLI_IMCM_PROCESS_SELECTED) AND bGoToActive) THEN
+			pChannel^.State.Start 	:= TRUE;
+		END_IF
+
+		IF bStateReady THEN
+			pChannel^.State.Ready 	:= TRUE;
+		END_IF
+
+		IF bStateSelect THEN
+			pChannel^.State.Selected := TRUE;
+		END_IF
+
+		IF bStateStop THEN
+			pChannel^.State.Stop := TRUE;
+		END_IF
+
+		IF bStateReset THEN
+			bGoToActive := TRUE;
+			pChannel^.State.Reset := TRUE;
+		END_IF
+
+	(*-------------------------------------------------------------------*)
+	HLI_IMCM_REFERENCE_MODE:
+		IF bStateStart THEN
+			pChannel^.State.Start := TRUE;
+		END_IF
+
+		IF bStateStop THEN
+			pChannel^.State.Stop := TRUE;
+		END_IF
+
+		IF bStateReset THEN
+			pChannel^.State.Reset := TRUE;
+		END_IF
+END_CASE
+
+
+bStateStart 	:= FALSE;
+bStateStop 		:= FALSE;
+bStateReset 	:= FALSE;
+bStateSelect 	:= FALSE;
+bStateready 	:= FALSE;]]></ST>
+      </Implementation>
+    </Action>
+  </POU>
+</TcPlcObject>

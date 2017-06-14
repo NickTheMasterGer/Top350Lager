@@ -1,0 +1,477 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4019.0">
+  <POU Name="FB_ReadCNCVariables" Id="{e3868681-ea1d-41f6-bd7d-43007fe7220c}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_ReadCNCVariables
+VAR_INPUT
+	bEnable		:	BOOL ;	(* B *)
+	nChanIdx	:   INT;
+	eVariablesType : E_CNCVariablesType;
+	tIntervall	:   TIME;
+END_VAR
+
+VAR_OUTPUT
+	Done			:	BOOL;	(* B *)
+	Busy			: 	BOOL;	(* E *)	
+	Error			:	BOOL;	(* B *)
+	ErrorID			:	UDINT;	(* E *) 
+END_VAR
+
+VAR_IN_OUT
+	 stCNCVariablesViewer_Data : ARRAY[0..MAX_CNC_VAR_LIST_IDX] OF ST_CNCVariablesViewer_Data;
+END_VAR
+
+VAR	
+	fbTrigger :	R_TRIG;
+	fbReadNumber: ADSREAD;
+	nParameterNumber : DINT;
+		
+	fbReadWrite: ADSRDWRT;	
+	strVarName : STRING(96);	
+	fVarValue  : LREAL;    
+ 	nIndex     : UDINT;
+	nListIndex : UDINT;	
+	
+	nState	: INT;
+	fbTimer : TON;
+
+	nReadLength 	   : UDINT;
+	
+ 	IDXOffsNumber	   : UDINT;
+	IDXOffsNamebyIndex : UDINT;
+	IDXOffsValuebyIndex : UDINT;	
+	stCNCVariablesViewer_Data_Temp : ARRAY[0..MAX_CNC_VAR_LIST_IDX] OF ST_CNCVariablesViewer_Data;
+		
+	nVEType 				: DINT;
+	nVESize 	 			: UDINT;
+    nVEMaxIndex1 		   	: UDINT; 
+    nVEMaxIndex2 		   	: UDINT;
+	strVEVarName 			: STRING(255);	
+	strVEDisplayVarName		: STRING(255);
+	arrVEDescriptionInput  	: ARRAY[0..259] OF BYTE;
+	arrVEOutput 			: ARRAY[0..2047] OF BYTE;
+			
+	nVEArrayIndex       	: UDINT;
+	nListIndexArrayStart	: UDINT; 	
+	
+	strValue            : STRING(127);
+			
+	dummyBoolean		: BOOL;
+	dummySInt			: SINT;
+	dummyUSInt			: USINT;
+	dummyInt            : INT;
+	dummyUInt			: UINT;
+	dummyDInt           : DINT;
+	dummyUDInt          : UDINT;
+	dummyLReal          : LREAL;
+	dummyString         : STRING;
+	dummyLargeString    : STRING(127);  
+
+	eVariablesTypeOld : E_CNCVariablesType;
+	
+END_VAR
+
+VAR CONSTANT
+	IDXOffsPNumber  : UDINT := 16#2;	
+	IDXOffsVLNumber : UDINT := 16#3;
+	IDXOffsVPNumber : UDINT := 16#4;
+	IDXOffsVSNumber : UDINT := 16#5;
+			
+	IDXOffsPNamebyIndex : UDINT := 16#1B;
+	IDXOffsVLNamebyIndex : UDINT := 16#1E;
+	IDXOffsVPNamebyIndex : UDINT := 16#21;
+	IDXOffsVSNamebyIndex : UDINT := 16#24;		
+	
+	IDXOffsPValuebyIndex : UDINT := 16#1D;
+	IDXOffsVLValuebyIndex : UDINT := 16#20;
+	IDXOffsVPValuebyIndex : UDINT := 16#23;
+	IDXOffsVSValuebyIndex : UDINT := 16#26;
+	IDXOffsVEValuebyName : UDINT := 16#2E;		
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(****************************************************************************************)
+(* POU:		ReadCNCVariables                     										*)
+(* Type:	FB																			*)
+(* Author: 	TV                                             								*)
+(* Date: 	20.01.2016																	*)
+(* Rev.: 	1.0                                              							*)
+(* ------------------------------------------------------------------------------------ *)
+(* Desc:	Description																	*)
+(****************************************************************************************)
+
+(****************************************************************************************)
+(*	FB reads in P, V.P, V.L., V.S., V.E. Parameter from the CNC Kernel via ADS		    *)
+(****************************************************************************************)
+
+IF (NOT HLI3_CheckChannelValid(nChannel := nChanIdx)) THEN	
+	RETURN; (* A b b r u c h *)
+END_IF
+
+IF 	NOT bEnable OR 
+	eVariablesType = E_CNCVariablesType.none  OR
+	(gpCh[0]^.channel_mc_control.mode_and_state.state_r.mode = HLI_IMCM_MANUAL_MODE AND eVariablesType <> E_CNCVariablesType.VE) OR
+	(gpCh[nChanIdx]^.channel_mc_control.mode_and_state.state_r.state <> HLI_IMCM_PROCESS_ACTIVE AND 
+	gpCh[nChanIdx]^.channel_mc_control.mode_and_state.state_r.state <>  HLI_IMCM_PROCESS_HOLD AND eVariablesType <> E_CNCVariablesType.VE) 
+		
+	THEN
+		Tc2_System.MEMSET(ADR(stCNCVariablesViewer_Data),0,SIZEOF(stCNCVariablesViewer_Data));
+		fbTrigger(CLK:= FALSE);
+		nState := 0;  
+	ELSE
+		fbTrigger(CLK:= TRUE);	
+END_IF
+
+IF fbTrigger.Q OR eVariablesTypeOld <> eVariablesType THEN		
+	fbReadNumber(READ:= FALSE);
+	fbReadWrite(WRTRD:= FALSE);
+	nIndex 		:= 1;	
+	nListIndex  := 0;
+	nState 		:= 1;
+	Error		:= FALSE;	(* B *)
+	ErrorID		:= 0;		(* E *) 
+END_IF
+
+IF nState <> 0 THEN
+	Busy := TRUE;
+END_IF
+
+CASE nState OF
+	
+0:
+;  
+1: 
+	Error		:= FALSE;	(* B *)
+	ErrorID		:= 0;	(* E *)
+
+	eVariablesTypeOld :=  eVariablesType;
+ 
+	Tc2_System.MEMSET(ADR(stCNCVariablesViewer_Data_Temp),0,SIZEOF(stCNCVariablesViewer_Data_Temp));
+	
+   	IF (eVariablesType = E_CNCVariablesType.P) THEN
+	      IDXOffsNumber 	 	:= IDXOffsPNumber;
+		  IDXOffsNamebyIndex 	:= IDXOffsPNamebyIndex;
+		  IDXOffsValuebyIndex 	:= IDXOffsPValuebyIndex;
+		  nReadLength			:= 8;			  
+	ELSIF (eVariablesType = E_CNCVariablesType.VL) THEN
+		 IDXOffsNumber 		 	:=  IDXOffsVLNumber;
+		 IDXOffsNamebyIndex  	:= IDXOffsVLNameByIndex;
+		 IDXOffsValuebyIndex 	:= IDXOffsVLValuebyIndex;
+		 nReadLength			:= 8;
+	ELSIF (eVariablesType = E_CNCVariablesType.VP) THEN
+		 IDXOffsNumber 		 	:=  IDXOffsVPNumber;
+		 IDXOffsNamebyIndex  	:= IDXOffsVPNameByIndex;
+		 IDXOffsValuebyIndex 	:= IDXOffsVPValuebyIndex;
+		 nReadLength			:= 8;
+	ELSIF (eVariablesType = E_CNCVariablesType.VS) THEN
+		 IDXOffsNumber 		 	:=  IDXOffsVSNumber;
+		 IDXOffsNamebyIndex  	:= IDXOffsVSNameByIndex;
+		 IDXOffsValuebyIndex 	:= IDXOffsVSValuebyIndex;
+		 nReadLength			:= 8;	
+   	END_IF
+				
+	
+	IF (eVariablesType <> E_CNCVariablesType.VE) THEN
+		fbReadNumber(
+			NETID:= , 
+			PORT:= 552, 
+			IDXGRP:= 16#22300 + INT_TO_UDINT(nChanIdx)+1, 
+			IDXOFFS:= IDXOffsNumber, 
+			LEN:= 4, 
+			DESTADDR:= ADR(nParameterNumber), 
+			READ:= TRUE, 
+		);
+		
+		IF NOT fbReadNumber.Busy THEN
+			IF fbReadNumber.Err	THEN
+				Error := fbReadNumber.ERR;
+				ErrorID := fbReadNumber.ERRID;
+				nState := 99;
+			ELSE			
+				nState := nState + 1;				
+			END_IF
+		END_IF
+	ELSE
+		nState := 20;
+	END_IF
+
+2:	// Read Variablen Name	
+	IF nParameterNumber > 0 THEN 
+		fbReadWrite(
+		NETID:= , 
+		PORT:= 552, 
+		IDXGRP:= 16#22300 + INT_TO_UDINT(nChanIdx)+1, 
+		IDXOFFS:= IDXOffsNamebyIndex, 
+		WRITELEN:= 4, 
+		READLEN:= 96, 
+		SRCADDR:= ADR(nIndex), 
+		DESTADDR:=ADR(strVarName), 
+		WRTRD:= TRUE);
+	
+		IF NOT fbReadWrite.Busy THEN
+			IF fbReadWrite.Err	THEN
+				Error := fbReadWrite.ERR;
+				ErrorID := fbReadWrite.ERRID;
+				nState := 99;
+			ELSE					
+				fbReadWrite(WRTRD:= FALSE);	
+				nState := 3;							
+			END_IF
+		END_IF
+	
+	ELSE	
+		nState := 99;
+	END_IF
+	
+	
+3:	// Read Variablen Value	P V.L. V.P. V.S	
+		fbReadWrite(
+		NETID:= , 
+		PORT:= 552, 
+		IDXGRP:= 16#22300 + INT_TO_UDINT(nChanIdx)+1, 
+		IDXOFFS:= IDXOffsValuebyIndex, 
+		WRITELEN:= 4, 
+		READLEN:= nReadLength, 
+		SRCADDR:= ADR(nIndex), 
+		DESTADDR:=ADR(fVarValue), 
+		WRTRD:= TRUE);
+	
+		IF NOT fbReadWrite.Busy THEN
+			IF fbReadWrite.Err	THEN
+				Error := fbReadWrite.ERR;
+				ErrorID := fbReadWrite.ERRID;
+				nState := 99;
+			ELSE
+				stCNCVariablesViewer_Data_Temp[nListIndex].strName := strVarName;
+				stCNCVariablesViewer_Data_Temp[nListIndex].strValue := LREAL_TO_STRING(fVarValue);		
+				nListIndex := nListIndex+1;								
+				nState := 4;
+			END_IF
+		END_IF		
+		
+		
+4:  
+	IF nIndex < DINT_TO_UDINT(nParameterNumber) AND (nListIndex <= MAX_CNC_VAR_LIST_IDX) THEN
+		fbReadWrite(WRTRD:= FALSE);
+		//nListIndex := nListIndex+1; 
+		nIndex := nIndex + 1;
+		nState := 2;
+	ELSE
+			fbTimer(IN:=FALSE);
+			nState := 60;
+	END_IF
+
+20:    	// Read V.E. Variable element number
+		arrVEDescriptionInput[0] := 86; // V
+		arrVEDescriptionInput[1] := 46; //.
+		arrVEDescriptionInput[2] := 69; //E
+		
+		fbReadWrite(
+			NETID:= , 
+			PORT:= 552, 
+			IDXGRP:= 16#22300 + INT_TO_UDINT(nChanIdx)+1, 
+			IDXOFFS:= 16#44, 
+			WRITELEN:= 256, 
+			READLEN:= 4, 
+			SRCADDR:= ADR(arrVEDescriptionInput), 
+			DESTADDR:=ADR(nParameterNumber), 
+			WRTRD:= TRUE);
+
+			IF NOT fbReadWrite.Busy THEN
+				IF fbReadWrite.Err	THEN
+					Error := fbReadWrite.ERR;
+					ErrorID := fbReadWrite.ERRID;
+					nState := 99;
+				ELSE
+					fbReadWrite(WRTRD:= FALSE);
+					IF nParameterNumber > 0 THEN	
+						nIndex := 0;		
+						nListIndexArrayStart := 0;
+						nVEArrayIndex := 0;			
+						nState := 21;					
+					ELSE			
+						fbTimer(IN:=FALSE);
+						nState := 60;			
+					END_IF
+				END_IF	
+			END_IF			
+			
+21:		// Read V.E. Variable description by index
+		MEMCPY(ADR(arrVEDescriptionInput),ADR(nIndex),SIZEOF(nIndex));
+		arrVEDescriptionInput[4] := 86; // V
+		arrVEDescriptionInput[5] := 46; //.
+		arrVEDescriptionInput[6] := 69; //E
+		
+		fbReadWrite(
+			NETID:= , 
+			PORT:= 552, 
+			IDXGRP:= 16#22300 + INT_TO_UDINT(nChanIdx)+1, 
+			IDXOFFS:= 16#45, 
+			WRITELEN:= 260, 
+			READLEN:= 2048, 
+			SRCADDR:= ADR(arrVEDescriptionInput), 
+			DESTADDR:=ADR(arrVEOutput), 
+			WRTRD:= TRUE);
+	
+		IF NOT fbReadWrite.Busy THEN
+			IF fbReadWrite.Err	THEN
+				Error := fbReadWrite.ERR;
+				ErrorID := fbReadWrite.ERRID;
+				nState := 99;
+			ELSE
+				fbReadWrite(WRTRD:= FALSE);
+				
+				//MEMCPY(ADR(nHandle),ADR(arrByte3),SIZEOF(nHandle));
+				MEMCPY(ADR(nVEType),ADR(arrVEOutput)+4,SIZEOF(nVEType));
+				// MEMCPY(ADR(nAccess),ADR(arrByte3)+4+4,SIZEOF(nAccess));
+				MEMCPY(ADR(nVESize),ADR(arrVEOutput)+4+4+4,SIZEOF(nVESize));
+				MEMCPY(ADR(nVEMaxIndex1),ADR(arrVEOutput)+4+4+4+4,SIZEOF(nVEMaxIndex1));
+				IF nVEMaxIndex1 <> 0 THEN
+					MEMCPY(ADR(nVEMaxIndex2),ADR(arrVEOutput)+4+4+4+4+4,SIZEOF(nVEMaxIndex2));
+					MEMCPY(ADR(strVEVarName),ADR(arrVEOutput)+4+4+4+4+4+4,SIZEOF(strVEVarName));
+				ELSE
+					MEMCPY(ADR(strVEVarName),ADR(arrVEOutput)+4+4+4+4+4,SIZEOF(strVEVarName));
+				END_IF
+												
+				IF nVEMaxIndex1 > 0 THEN
+					nListIndexArrayStart := nListIndex;
+					FOR nVEArrayIndex := 0 TO nVEMaxIndex2-1 DO						
+						strVEDisplayVarName := CONCAT(strVEVarName,'[');
+						strVEDisplayVarName := CONCAT(strVEDisplayVarName,UDINT_TO_STRING(nVEArrayIndex));
+						strVEDisplayVarName := CONCAT(strVEDisplayVarName,']');			
+						stCNCVariablesViewer_Data_Temp[nListIndex].strName := strVEDisplayVarName;
+						IF (nListIndex < MAX_CNC_VAR_LIST_IDX) THEN
+							nListIndex := nListIndex+1;
+						ELSE
+							EXIT;
+						END_IF
+							
+					END_FOR	
+					   nVEArrayIndex := 0;
+					   nListIndex := nListIndexArrayStart;
+					   nState := 25;											
+				ELSE			
+					nVEArrayIndex := 0;
+					stCNCVariablesViewer_Data_Temp[nListIndex].strName := strVEVarName;						
+					nState := 25;
+				END_IF						
+			END_IF
+		END_IF	
+		
+25:		// Read Value By Name	
+		IF nVEMaxIndex1 = 0 THEN			
+			strVEVarName := stCNCVariablesViewer_Data_Temp[nListIndex].strName;
+		ELSE
+			strVEVarName := stCNCVariablesViewer_Data_Temp[nListIndex+nVEArrayIndex].strName ;
+		END_IF		
+							
+		fbReadWrite(
+		NETID:= , 
+		PORT:= 552, 
+		IDXGRP:= 16#22300 + INT_TO_UDINT(nChanIdx)+1, 
+		IDXOFFS:= 16#48, 
+		WRITELEN:= SIZEOF(strVEVarName), 
+		READLEN:= 2048, 
+		SRCADDR:= ADR(strVEVarName), 
+		DESTADDR:=ADR(arrVEOutput), 
+		WRTRD:= TRUE);
+		
+		IF NOT fbReadWrite.Busy THEN
+			IF fbReadWrite.Err	THEN
+				Error := fbReadWrite.ERR;
+				ErrorID := fbReadWrite.ERRID;
+				nState := 99;
+			ELSE	
+						
+				IF nVEType = E_VEVariablesType.BOOLEAN THEN 
+					MEMCPY(ADR(dummyBoolean),ADR(arrVEOutput),1);
+					strValue := BOOL_TO_STRING(dummyBoolean);
+				ELSIF nVEType = E_VEVariablesType.UNS08 THEN
+					MEMCPY(ADR(dummyUSInt),ADR(arrVEOutput),1);
+					strValue := USINT_TO_STRING(dummyUSInt);
+				ELSIF nVEType = E_VEVariablesType.SGN08 THEN
+					MEMCPY(ADR(dummySInt),ADR(arrVEOutput),1);
+					strValue := SINT_TO_STRING(dummySInt);
+				ELSIF nVEType = E_VEVariablesType.UNS16 THEN
+					MEMCPY(ADR(dummyUInt),ADR(arrVEOutput),2);
+					strValue := UINT_TO_STRING(dummyUInt);
+				ELSIF nVEType = E_VEVariablesType.SGN16 THEN
+					MEMCPY(ADR(dummyInt),ADR(arrVEOutput),2);
+					strValue := INT_TO_STRING(dummyInt);
+				ELSIF nVEType = E_VEVariablesType.UNS32 THEN
+					MEMCPY(ADR(dummyUDInt),ADR(arrVEOutput),4);
+					strValue := UDINT_TO_STRING(dummyUDInt);
+				ELSIF nVEType = E_VEVariablesType.SGN32 THEN
+					MEMCPY(ADR(dummyDInt),ADR(arrVEOutput),4);
+					strValue := DINT_TO_STRING(dummyDInt);
+				ELSIF nVEType = E_VEVariablesType.REAL64 THEN
+					MEMCPY(ADR(dummyLReal),ADR(arrVEOutput),8);
+					strValue := LREAL_TO_STRING(dummyLReal);						
+				ELSIF nVEType = E_VEVariablesType.VESTRING THEN					 									
+					MEMCPY(ADR(dummyLargeString),ADR(arrVEOutput),nVESize-1);
+					strValue := dummyLargeString;
+				ELSE
+					nState := 99;
+				END_IF				
+				
+				nState := 26;	
+			END_IF
+		END_IF	
+		
+26:
+		stCNCVariablesViewer_Data_Temp[nListIndex+nVEArrayIndex].strValue := strValue;									
+										
+		IF nVEArrayIndex < nVEMaxIndex2-1 AND  nVEMaxIndex1 <> 0 THEN
+			fbReadWrite(WRTRD:= FALSE);
+			nVEArrayIndex := nVEArrayIndex +1;
+			IF (nListIndex+nVEArrayIndex <= MAX_CNC_VAR_LIST_IDX) THEN
+				nState := 25;
+			ELSE
+				nState := 60;
+			END_IF
+		ELSE
+			IF (nListIndex <= MAX_CNC_VAR_LIST_IDX) THEN
+				nListIndex := nListIndex+nVEArrayIndex +1;
+				nState := 30;
+			ELSE
+				nState := 60;
+			END_IF		
+			
+		END_IF
+		
+30:  
+	IF nIndex < DINT_TO_UDINT(nParameterNumber-1) THEN
+		fbReadWrite(WRTRD:= FALSE);		 
+		nIndex := nIndex + 1;
+		nState := 21;
+	ELSE
+		fbReadWrite(WRTRD:= FALSE);				
+		fbTimer(IN:=FALSE);			
+		nState := 60;
+	END_IF
+
+60:
+	// Output
+	Tc2_System.MEMCPY(ADR(stCNCVariablesViewer_Data),ADR(stCNCVariablesViewer_Data_Temp),SIZEOF(stCNCVariablesViewer_Data_Temp));
+	fbTimer(IN:=TRUE , PT:=tIntervall);	
+	IF fbTimer.Q THEN
+		fbReadNumber(READ:= FALSE);
+		fbReadWrite(WRTRD:= FALSE);
+		nListIndex := 0;
+		nIndex := 1;
+		nState := 1;
+	END_IF
+
+99: // Error 
+	nIndex := 1;
+	nListIndex := 0;
+	fbReadNumber(READ:= FALSE);
+	fbReadWrite(WRTRD:= FALSE);
+	fbTimer(IN:=FALSE);
+	nState := 60;			
+END_CASE
+
+
+	
+	]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

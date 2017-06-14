@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4018.2">
+  <POU Name="PRG_ManualMode" Id="{a49afcfd-2362-4153-9029-fef2053cbbbc}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM PRG_ManualMode
+VAR
+	
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(****************************************************************************************)
+(* POU:		PRG_ManualMode                      										*)
+(* Type:	PRG																			*)
+(* Author: 	HR                                               							*)
+(* Date: 	24.01.11																	*)
+(* Rev.: 	1.0                                               							*)
+(* ------------------------------------------------------------------------------------ *)
+(* Desc:	Calls the appropriate manual mode handler									*)
+(****************************************************************************************)
+
+(* By default 'geManualModeController' is 'HMI'. Therefore program 'PRG_ManualModeHMI'	*)
+(* is called in order to map manual mode signals from HMI to the manual mode control	*)
+(* structures. By changing 'geManualModeController´s' value one can call different sub	*)
+(* programs to set them in a application specific way.
+									*)
+geManualModeController := HMI;
+
+
+CASE geManualModeController OF
+	HMI:		PRG_ManualModeHMI();
+	PANEL:		;
+	REMOTE:		;
+	CUSTOMER:	;
+END_CASE]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

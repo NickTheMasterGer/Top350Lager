@@ -1,0 +1,20 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI3_GetFeedholdState" Id="{d4fcd764-7110-40a8-94d5-43fe9f1ced1f}">
+    <Declaration><![CDATA[FUNCTION HLI3_GetFeedholdState : BOOL
+VAR_INPUT
+	/// Number of channel 
+	nChanIdx: INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+IF NOT HLI3_CheckChannelValid(nChannel := nChanIdx) THEN
+	RETURN;
+END_IF
+HLI3_GetFeedholdState:=gpCh[nChanIdx]^.bahn_mc_control.feedhold.state_r;
+
+]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

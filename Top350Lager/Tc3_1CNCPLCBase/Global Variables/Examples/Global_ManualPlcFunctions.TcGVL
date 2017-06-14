@@ -1,0 +1,17 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.19">
+  <GVL Name="Global_ManualPlcFunctions" Id="{ede32076-703d-425a-810b-8f8c74005cf8}">
+    <Declaration><![CDATA[VAR_GLOBAL
+	
+	PortalInfo			: STRING;
+	PortalOn			: ARRAY[1..20] OF BOOL;
+	PortalOff			: ARRAY[1..20] OF BOOL;
+	PortalStatus		: ARRAY[1..20] OF BYTE;
+	
+	HandAnwInfo			: STRING;
+	HandAnwOn			: ARRAY[1..20] OF BOOL;
+	HandAnwOff			: ARRAY[1..20] OF BOOL;
+	HandAnwStatus		: ARRAY[1..20] OF BYTE;
+END_VAR]]></Declaration>
+    <ObjectProperties />
+  </GVL>
+</TcPlcObject>

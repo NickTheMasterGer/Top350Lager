@@ -1,0 +1,71 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI3_GetChannelMessage" Id="{c9da26ed-e382-4759-a20e-45ca6aedfe35}">
+    <Declaration><![CDATA[FUNCTION_BLOCK HLI3_GetChannelMessage
+VAR_INPUT
+	/// Number of channel 
+	nChanIdx: INT;
+	bExecute: BOOL := FALSE;
+	bShowDlg: BOOL := FALSE;
+END_VAR
+VAR_OUTPUT
+	strToPLC: STRING(HLI_MSG_CONTENT_STRL) := '';
+	iMsgType: DWORD := 0;
+END_VAR
+VAR
+	pChannel: POINTER TO HIGH_LEVEL_INTERFACE_CH;
+	pMsgCU: POINTER TO MC_CONTROL_MSG_UNIT;
+	pMsgToPLC: POINTER TO STRING(HLI_MSG_CONTENT_STRL);
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*     FB: HLI_GetChannelMessage                             *)
+(* --------------------------------------------------------- *)
+(*   Desc: Get message from the CNC                          *)
+(*   Author: MK, MiB                                         *)
+(*   Date: 20.11.2012                                        *)
+(*   Last:                                                   *)
+(*   Rev.: 1.01                                              *)
+(* ========================================================= *)
+
+IF NOT HLI3_CheckChannelValid(nChannel := nChanIdx) THEN
+	RETURN;
+END_IF
+
+
+(* Get pointer to data of a specific channel at the HLI *)
+pChannel := gpCh[nChanIdx];
+
+(* Control unit at the HLI that handles channel specific messages *)
+pMsgCU := ADR(pChannel^.msg_mc_control);
+
+IF bExecute = TRUE THEN
+	(* Is the complete message in the control unit? *)
+	IF pMsgCU^.request_semaphor_rw = TRUE
+	THEN
+		(* Pointer to content of the message sent to the PLC *)
+		pMsgToPLC := ADR(pMsgCU^.request_r.inhalt);
+
+		(* Get the message from the control unit *)
+		strToPLC := pMsgToPLC^;
+
+   	    CNCSystem.Channel[nChanIdx].Message := strToPLC;
+
+		(* Get the message type *)
+		iMsgType := pMsgCU^.request_r.typ;
+
+		(* Pop up dialog with the message send to the PLC *)
+		IF bShowDlg THEN
+			ADSLOGSTR( msgCtrlMask := ADSLOG_MSGTYPE_MSGBOX OR ADSLOG_MSGTYPE_LOG,
+			           msgFmtStr   := 'Message sent to PLC via HLI:%s',
+			           strArg      := strToPLC);
+		END_IF
+
+		(* Acknowledge that you got the message *)
+		pChannel^.msg_mc_control.request_semaphor_rw  := FALSE;
+	END_IF;
+END_IF;]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

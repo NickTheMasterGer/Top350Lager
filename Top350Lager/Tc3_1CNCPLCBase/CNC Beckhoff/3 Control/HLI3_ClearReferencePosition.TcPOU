@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.36">
+  <POU Name="HLI3_ClearReferencePosition" Id="{f7943a68-4f05-4f06-841c-8061b9fa921c}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION HLI3_ClearReferencePosition : BOOL
+VAR_INPUT
+	bExecute: BOOL;
+	nHliAxisIdx: INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: HLI3_ClearReferencePosition                       *)
+(* --------------------------------------------------------- *)
+(*   Desc:                                                   *)
+(* 	 Author: TV                                              *)
+(*   Date: 17.06.2015                                        *)
+(*   Rev.: 1.0                                               *)
+(* ========================================================= *)
+HLI3_ClearReferencePosition := FALSE;
+
+IF NOT HLI3_CheckAxisValid(nHliAxisIdx := nHliAxisIdx) THEN	
+	RETURN;
+END_IF
+
+(* set reference position *)
+gpAx[nHliAxisIdx]^.lr_mc_control.clear_reference_position.enable_w := TRUE;
+gpAx[nHliAxisIdx]^.lr_mc_control.clear_reference_position.command_w := bExecute;
+HLI3_ClearReferencePosition := TRUE;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

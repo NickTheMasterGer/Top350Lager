@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.24">
+  <DUT Name="E_FastMFunctionState" Id="{ae5e92d1-c766-4c4d-b64a-29e1b5d00b41}">
+    <Declaration><![CDATA[(****************************************************************************************)
+(* POU:		E_FastMFunctionState                     									*)
+(* Type:	ENUM																		*)
+(* Author: 	RCH		                                             						*)
+(* Date: 	14/10/29																	*)
+(* Rev.: 	1.0                                               							*)
+(* ------------------------------------------------------------------------------------ *)
+(* Desc.:	Defines the state of an digital output handled by instances of FB			*)
+(*			HLI3_FastMFunctionHandler.													*)
+(* ------------------------------------------------------------------------------------ *)
+(* Rev.:	<Enter revision number here>												*)
+(* Date:	<Enter revision data here>				                                   	*)
+(* Author:	<Enter author´s shortcut here>											 	*)
+(* Desc.:	<Enter description here>													*)
+(****************************************************************************************)
+TYPE E_FastMFunctionState :
+(
+	EMPTY	:= 0,	(* Not switched yet *)
+	OFF 	:= 1,	(* Switched OFF *)
+	ON 		:= 2	(* Switched ON *)
+);
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

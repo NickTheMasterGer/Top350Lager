@@ -1,0 +1,50 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.36">
+  <POU Name="HLI3_HandleSpindleTechnoGearchange" Id="{b9782ce2-d64e-4a4a-9d90-8e42b4d20035}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK HLI3_HandleSpindleTechnoGearchange EXTENDS HLI3_HandleSpindleTechno
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR_IN_OUT
+		/// Raises if the cnc program encounters a M40 for the relevant spindle. Reset this for acknowledge 
+	M40: BOOL;
+	/// Raises if the cnc program encounters a M41 for the relevant spindle. Reset this for acknowledge 
+	M41: BOOL;
+	/// Raises if the cnc program encounters a M42 for the relevant spindle. Reset this for acknowledge 
+	M42: BOOL;
+	/// Raises if the cnc program encounters a M43 for the relevant spindle. Reset this for acknowledge 
+	M43: BOOL;
+	/// Raises if the cnc program encounters a M44 for the relevant spindle. Reset this for acknowledge 
+	M44: BOOL;
+	/// Raises if the cnc program encounters a M45 for the relevant spindle. Reset this for acknowledge 
+	M45: BOOL;	
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* Date:	15/03/05																	*)
+(* Author:	MiB																			*)
+(* Rev:		1.0																			*)
+(* ------------------------------------------------------------------------------------ *)
+(* Desc 	Handling of spindle gear change M functions M40 - M45.						*)
+(*			extends HLI3_SpindleTechno													*)
+(*			overwrites the internal pointers to M40..M45 to VAR_IN_OUT					*)
+
+
+SUPER^.pM40 := ADR(M40);
+SUPER^.pM41 := ADR(M41);
+SUPER^.pM42 := ADR(M42);
+SUPER^.pM43 := ADR(M43);
+SUPER^.pM44 := ADR(M44);
+SUPER^.pM45 := ADR(M45);
+
+A_HandleTechno();
+
+
+
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

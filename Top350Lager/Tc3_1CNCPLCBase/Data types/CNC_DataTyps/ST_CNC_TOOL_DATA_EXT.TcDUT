@@ -1,0 +1,28 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="ST_CNC_TOOL_DATA_EXT" Id="{0ad81cb2-8be7-40e3-a324-53e38e1c99be}">
+    <Declaration><![CDATA[TYPE ST_CNC_TOOL_DATA_EXT :
+STRUCT
+	tool_desc: CNC_TOOL_DESC;
+	tool_life: CNC_TOOL_LIFE_DATA;
+	dist_max: LREAL;
+	time_max: LREAL;
+	/// 0.1 µm 
+	laenge: DINT;
+	/// 0.1 µm 
+	laenge_delta: DINT;
+	/// 0.1 µm 
+	radius: DINT;
+	/// 0.1 µm 
+	radius_delta: DINT;
+	/// position in tool holder 
+	pos: DINT;
+	/// 0.1 µm 
+	tolerancePos: DINT;
+	/// 0.1 µm 
+	toleranceNeg: DINT;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

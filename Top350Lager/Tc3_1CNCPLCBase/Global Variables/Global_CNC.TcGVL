@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4020.12">
+  <GVL Name="Global_CNC" Id="{7d2cc5f8-189d-4c4c-b283-a4224e38e899}">
+    <Declaration><![CDATA[VAR_GLOBAL
+	CNCSystem						: ST_CncSystem;
+END_VAR
+
+(****************************************************************************************)
+(*	  	Global constants used by the fast M function handling process (MOS_TS)			*)
+(****************************************************************************************)
+VAR_GLOBAL CONSTANT
+	MAX_FAST_M_FUNC_ITEM_IDX	: UINT	:= 7;			(* Max. index of fast M functions processed by HLI3_FastMFunctionProvider per PLC cycle *) 
+	MAX_FAST_M_FUNC_QUEUE_IDX	: UINT	:= 63;			(* Max. index of fast M function switch events buffered by HLI3_FastMFunctionHandler *) 
+	MAX_FAST_M_FUNC_OUTPUT_IDX	: UINT	:= 124;			(* Max. index of fast M function oversampling output byte array *)			
+	MAX_SYS_LOG_AXIS_INDEX		: UINT  := 255;			(* Max. Index of Log. Axis Id *) 				
+	
+	MAX_USED_CHANNEL_IDX		: INT := 0;				(* Max index of channel that is used starting at 0, example: 1 -> totally 2 channels, maximum of 11 (12 channels) is allowed here *)
+	
+	stVersion_CNCPlcBaseProject : ST_LibVersion := STRUCT(iMajor := 3, iMinor := 1, iBuild := 3035, iRevision := 30, sVersion := '3.1.3035.30');
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

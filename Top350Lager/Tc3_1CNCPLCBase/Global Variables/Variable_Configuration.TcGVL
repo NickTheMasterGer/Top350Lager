@@ -1,0 +1,7 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <GVL Name="Variable_Configuration" Id="{49fe29e9-282a-4c4b-b3af-8056c7c12783}">
+    <Declaration><![CDATA[VAR_GLOBAL
+END_VAR]]></Declaration>
+    <ObjectProperties />
+  </GVL>
+</TcPlcObject>

@@ -1,0 +1,242 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.36">
+  <POU Name="HLI3_InitToolConfig" Id="{13118ec3-3b59-4943-aef0-fd7b6149b19e}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM HLI3_InitToolConfig
+VAR
+	BasicToolId: DINT;
+	pToolId: POINTER TO CNC_TOOL_ID;
+	pToolReq: POINTER TO CNC_TOOL_REQUEST_IN;
+	pToolLife: POINTER TO CNC_TOOL_DATA_IN;
+	Rind: ADSRDWRTIND;
+	RRes: ADSRDWRTRES;
+	bRes: BOOL;
+	i: INT;
+	nr: DINT;
+	SisterToolID: DINT;
+	d1: UINT;
+	t1: UINT;
+	fbRTrigD: R_TRIG;
+	fbRTrigOldData: R_TRIG;
+	T0: CNC_TOOL_DATA;
+	pos: INT;
+	cnc_channel_nr: UDINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ---------------------*----------------------------------|------------------------------------------------------- *)
+(* PURPOSE: External Tool Change                                                                                    *)
+(*          used for tool change and tool live                                                                      *)
+(*                                                                                                                  *)
+(* SCOPE:                                                                                                           *)
+(*                                                                                                                  *)
+(*                                                                                                                  *)
+(* REMARKS:                                                                                                         *)
+(*                                                                                                                  *)
+(*                                                                                                                  *)
+(* AUTHOR:              VERSION     DATE                   CHECKED FROM      DATE     STATUS                        *)
+(*    MK                1.0         07.05.2003                                                                      *)
+(*    MiB               1.1         04.04.2006                                                                      *)
+(*    MK                1.2         04.08.2006                                                                      *)
+(*	  MiB					1.3			04.12.2006																						    	  *)
+(*	  MiB					1.4			19.11.2012          TC3																					  *)
+(*	  MiB					1.5			05.03.2015          TC3	  Zusatzparameter P[i]  werden aus der CNC zur PLC in OldTool übertragen		  *)
+(*                                                                                                                  *)
+(* ---------------------*----------------------------------|------------------------------------------------------- *)
+
+(*
+ ATTENTION: These Indications are only sent by the CNC if the CNC channel is configured accordingly:
+In the SDA-MDS parammeter list the following parameters must be set:
+- ext_wzv_vorhanden    1   -> (external tool managment present) Tool requests D<i> are sent TO external tool data manager
+- einrechnen_mit_t     0/1 -> programming T<i> implies a programmed D<i>
+- tool_life_to_wzv     1   -> send tool data life parameters TO external tool data manager IF tool is changed.
+- t_info_to_wzv        1   -> send tool to external tool data manager IF tool is programmed.
+
+CNC_TOOL_ID :
+	basic					: DINT;
+	sister				: DINT;
+	variant				: DINT;
+	sister_valid		: BOOL;
+	variant_valid		: BOOL;
+	res1					: BYTE;
+	res2					: BYTE;
+CNC_TOOL_REQUEST_IN :
+	id						: CNC_TOOL_ID; 		(* tool id of requested tool *)
+	act_t_nr				: DINT;					(* actual t number in nc kernel *)
+	act_d_nr				: CNC_TOOL_ID; 		(* actual tool id (d-number) in the nc kernel *)
+	param					: ARRAY [0..CNC_TOOL_PARAM_MAXIDX] OF LREAL;
+CNC_TOOL_DESC :
+	tool_id				: CNC_TOOL_ID;
+	laenge				: DINT;
+	radius				: DINT;
+	ax_versatz			: ARRAY [0..CNC_TOOL_AXIS_OFFSET_MAXIDX] OF DINT;
+	kopf_versatz		: ARRAY [0..CNC_TOOL_HEAD_OFFSET_MAXIDX] OF DINT;
+	mass_einheit		: UINT;
+	typ					: UINT;
+	srk_lage			: UINT;
+	kin_id				: UINT;
+	log_ax_nr_spdl		: UINT;
+	tool_fixed			: BOOL;
+	valid				: BOOL;
+	add_info			: ARRAY [0..HLI_ADD_INFO_MAXIDX] OF DWORD; (*additional tool information, can be used for fitting cycle *)
+	res					: ARRAY [1..4] OF BYTE;
+	param				: ARRAY [0..CNC_TOOL_PARAM_MAXIDX] OF LREAL;
+	vb_min				: LREAL;
+	vb_max				: LREAL;
+	a_max				: LREAL;
+*)
+
+
+(* Init Tool Configuration *)
+bRes := FALSE;
+Rind();
+
+IF PLCReset THEN
+  	bToolData := FALSE;    (* Reset request to HMI *)
+	bOldToolData := FALSE;
+END_IF
+
+IF Rind.VALID THEN
+	(* initialize response *)
+	RRes.NETID := '';
+	RRes.PORT	:= Rind.PORT;
+	RRes.INVOKEID := Rind.INVOKEID;
+
+	(* sender channel nr is coded in the invoke id *) (* Kanalnummer zur Zeit nicht benutzt *)
+	cnc_channel_nr := RInd.INVOKEID; 
+	cnc_channel_nr := cnc_channel_nr AND 16#00FFFFFF; 
+	
+		
+	(* Since there is only one ADSRDWRTIND possible per PLC task *)
+	(* all indications have to be handled in one place *)
+	(* To distinguish between several possible request types *)
+	(* the indexgroup of the ADSRDWRTIND is used *)
+
+	(*----- CNC tool data request with T<i>-----*)
+	(* CNC teil den Werkzeugwechsel T<i> (während Programmdekodierung) mit *)
+	IF Rind.IDXGRP = ADS_IGRP_TOOL_INFO_WRITE THEN (* 16#80040000  *)
+
+		(* Tool data request from CNC *)   (* nicht bearbeiten, sondern sofort beantworten *)
+		pToolId		:= Rind.DATAADDR;
+		BasicToolId	:= pToolId^.basic;
+		RRes.LEN			:= SIZEOF(pToolId^);
+		RRes.DATAADDR	:= pToolId;
+		RRes.RESULT		:= ADS_RDWRT_IND_NO_ERROR;
+		bRes := TRUE;
+		fbRTrigD(clk := FALSE);
+
+
+	(*----- CNC tool data request with D<i>-----*)
+	(* CNC fordert Werkzeuggeometriedaten aufgrund D<i> an *)
+	ELSIF Rind.IDXGRP = ADS_IGRP_TOOL_DESC_READ AND
+			NOT bToolData AND NOT bOldToolData THEN   (* wait until all old request are answered *)
+		(* Tool data request from CNC *)
+		pToolReq		:= Rind.DATAADDR;
+		BasicToolId	:= pToolReq^.id.basic;
+		fbRTrigD(clk := TRUE);
+		IF fbRTrigD.Q THEN
+			oldTool := aktTool;
+			oldTool.tool_desc.param := pToolReq^.param;			(* Parameter Array aus der CNC in oldTool übernehmen *)						
+			d1 := d1 + 1;
+			nToolRequestID := BasicToolId;
+			bToolData := TRUE;										(* start data transfer from HMI to PLC *)
+		END_IF
+
+		IF NOT bToolData THEN									(* bToolData wird false, wenn HMI Tool Daten gesendet hat (in die Struktur aktTool) *)
+
+			RRes.LEN			:= SIZEOF(aktTool.tool_desc);
+			RRes.DATAADDR	:= ADR(aktTool.tool_desc);
+			RRes.RESULT		:= ADS_RDWRT_IND_NO_ERROR;
+			bRes := TRUE;
+			fbRTrigD(clk := FALSE);
+
+			pos := DINT_TO_INT( aktTool.pos) ;					(* Position im Magazin *)
+
+			
+			(* Example for using additional parameters param[i] *)
+			
+			(*
+			aktTool.tool_desc.param[4] := WkzWechslerPos1[pos * 4 ];		(* Z - AbholPos im Magazin *)
+			aktTool.tool_desc.param[3] := WkzWechslerPos1[(pos * 4) - 1 ];	(* Z - AblagePos im Magazin *)
+			aktTool.tool_desc.param[2] := WkzWechslerPos1[(pos * 4) - 2 ];	(* Y - Pos im Magazin *)
+			aktTool.tool_desc.param[1] := WkzWechslerPos1[(pos * 4) - 3];	(* X - POS im Magazin *)
+			*)
+			
+			(* Delta verrechnen, da in der CNC nur eine Länge ohne Delta existiert *)
+			aktTool.tool_desc.laenge := aktTool.laenge + aktTool.laenge_delta;
+			aktTool.tool_desc.radius := aktTool.radius + aktTool.radius_delta;
+
+			IF aktTool.tool_desc.valid THEN
+				VE_Tool 			:= DINT_TO_UINT( aktTool.tool_desc.tool_id.basic );
+				nToolInCnc := aktTool.tool_desc.tool_id.basic;
+				nToolInCncSister := aktTool.tool_desc.tool_id.sister;
+			END_IF
+		END_IF
+
+	(*----- CNC tool life -----*)
+	(* CNC aktualisiert die Werkzeugstanddaten nach Anwahl eines anderen Werkzeugs T<i> *)
+	ELSIF Rind.IDXGRP = ADS_IGRP_TOOL_LIFE_DATA_WRITE THEN
+		fbRTrigD(clk := FALSE);
+		t1 := t1 + 1;
+
+		(* CNC writes tool life data *)
+		pToolLife := Rind.DATAADDR;
+		BasicToolId := pToolLife^.tool_id.basic;
+		SisterToolID := pToolLife^.tool_id.sister;
+
+		(* no data transmitted in the response *)
+		RRes.LEN			:= 0;
+		RRes.DATAADDR	:= 0;
+
+		IF BasicToolId = oldTool.tool_desc.tool_id.basic AND NOT bOldToolData THEN
+			(* actualize tool life data *)
+			oldTool.tool_life.dist_used := oldTool.tool_life.dist_used + pToolLife^.dist_used;
+			oldTool.tool_life.time_used := oldTool.tool_life.time_used + pToolLife^.time_used;
+			(* Ist das Werkzeug noch gültig ? *)
+			IF oldTool.dist_max > 0 AND (oldTool.tool_life.dist_used > oldTool.dist_max) THEN
+				oldTool.tool_desc.valid := FALSE;
+			END_IF
+			IF oldTool.time_max > 0 AND (oldTool.tool_life.time_used > oldTool.time_max) THEN
+				oldTool.tool_desc.valid := FALSE;
+			END_IF
+			fbRTrigOldData(clk := TRUE);
+
+			IF fbRTrigOldData.Q THEN
+				bOldToolData := TRUE;
+			END_IF
+
+			RRes.RESULT := ADS_RDWRT_IND_NO_ERROR;
+			IF NOT bOldToolData THEN
+				bRes := TRUE;
+				fbRTrigOldData(clk := FALSE);
+			END_IF
+
+		ELSE
+			RRes.RESULT := WZV_TOOL_ID_BASIC_INVALID;
+			fbRTrigOldData(clk := FALSE);
+			bRes := TRUE;
+		END_IF
+	ELSE
+		(* Unknown indexgroup, just send an response *)
+		RRes.LEN			:= 0;
+		RRes.DATAADDR	:= 0;
+		RRes.RESULT		:= ADS_RDWRT_IND_UNKNOWN_INDEXGROUP;
+	END_IF
+END_IF
+
+
+RRes(RESPOND:=bRes);
+
+IF bRes THEN
+	RRes(RESPOND:=FALSE);
+	Rind(CLEAR:=TRUE);
+	Rind(CLEAR:=FALSE);
+END_IF
+
+
+
+
+
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.24">
+  <DUT Name="ST_FastMFunctionBufferItem" Id="{24c558ac-c8e1-4953-817e-5587704ffd28}">
+    <Declaration><![CDATA[(****************************************************************************************)
+(* POU:		ST_FastMFunctionBufferItem                     								*)
+(* Type:	STRUCT																		*)
+(* Author: 	RCH		                                             						*)
+(* Date: 	14/10/29																	*)
+(* Rev.: 	1.0                                               							*)
+(* ------------------------------------------------------------------------------------ *)
+(* Desc.:	Defines data content for a single fast M function switch event managed 		*)
+(*			internally by instances of HLI3_FastMFunctionHandler.						*) 
+(* ------------------------------------------------------------------------------------ *)
+(* Rev.:	<Enter revision number here>												*)
+(* Date:	<Enter revision data here>				                                   	*)
+(* Author:	<Enter author´s shortcut here>											 	*)
+(* Desc.:	<Enter description here>													*)
+(****************************************************************************************)
+TYPE ST_FastMFunctionBufferItem :
+STRUCT
+	eState			: E_FastMFunctionState;		(* The target switch state *)
+	nSwitchTime		: DINT;						(* The calculated switch time *)
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

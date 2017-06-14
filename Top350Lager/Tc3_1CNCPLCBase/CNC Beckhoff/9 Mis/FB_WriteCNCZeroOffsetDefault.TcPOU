@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4018.5">
+  <POU Name="FB_WriteCNCZeroOffsetDefault" Id="{90377f6a-0b85-4c13-beba-a445fa55cbb0}" SpecialFunc="None">
+    <Declaration><![CDATA[/// ------------------------------------------------------------------------------------ 
+/// Desc:	Description																	
+///**************************************************************************************
+///**************************************************************************************
+///	 Write NPV Default (the active table afetr reset) directly to CNC core using V.G. Variables via ADS	
+///**************************************************************************************
+FUNCTION_BLOCK FB_WriteCNCZeroOffsetDefault
+VAR_INPUT
+	/// rising edge to start 
+	bExecute: BOOL;
+	/// which table, G54=1, G55=2, G55=3, .... 
+	nG159Index: BYTE;
+	/// Channel Indedx
+	nChanIdx: UDINT;
+END_VAR
+VAR_OUTPUT
+	bBusy: BOOL;
+	bError: BOOL;
+	nErrorID: UDINT;
+END_VAR
+VAR
+	fbAdsWrite: ADSWRITE;
+	stCNCG159VG: ST_CNCG159VG;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[stCNCG159VG.dValue := nG159Index;
+stCNCG159VG.sTarget := 'V.G.NP_DEFAULT';
+
+fbAdsWrite(
+	PORT:= 552 ,
+	IDXGRP:= 16#22300 + nChanIdx+1,
+	IDXOFFS:=16#3F,
+	LEN:= SIZEOF(stCNCG159VG) ,
+	SRCADDR:=ADR(stCNCG159VG) ,
+	WRITE:= bExecute,
+	TMOUT:= ,
+	BUSY=> bBusy,
+	ERR=> bError ,
+	ERRID=> nErrorID);
+	
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

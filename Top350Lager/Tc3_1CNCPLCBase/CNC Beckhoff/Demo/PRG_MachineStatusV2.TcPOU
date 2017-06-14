@@ -1,0 +1,61 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.29">
+  <POU Name="PRG_MachineStatusV2" Id="{5b55f794-1ca9-4e79-9896-92d9f88c4732}">
+    <Declaration><![CDATA[PROGRAM PRG_MachineStatusV2
+VAR	
+	fbTon: TON;
+	fbTon2: TON;
+	btest: BOOL;
+	sName: STRING;
+	sFarbe: STRING;
+	nFarbe : UDINT;
+	nFarbe2: UDINT;
+	value: UDINT;
+	value2 : UDINT;
+	bUp: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+fbTon(in := NOT fbton.Q, pt := t#250ms);
+IF (fbTon.Q) THEN
+	btest := NOT bTest;
+END_IF
+
+fbton2(in := NOT fbton2.Q, pt := t#30ms);
+IF fbton2.Q THEN
+
+	IF (bUp) THEN
+		value := value + 1;
+	ELSE
+		value := value - 1;
+	END_IF
+	IF value >= 200 THEN
+		bUp := FALSE;
+		value := 200;
+	END_IF
+	IF value <= 0 THEN
+		bUp := TRUE;
+		value := 0;
+	END_IF
+	value2 := 100 - value;
+END_IF
+
+nFarbe2 := 16#FF000000 + value2 * 2 * 16#010000 + value * 2 * 16#01;
+
+IF btest THEN
+	sName := 'EIN';
+	sFarbe := 'blau';
+	nFarbe := 16#FF0000FF;
+ELSE
+	sName := 'aus';
+	sFarbe := 'rot';
+	nFarbe := 16#FFFF0000;
+
+END_IF
+
+]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

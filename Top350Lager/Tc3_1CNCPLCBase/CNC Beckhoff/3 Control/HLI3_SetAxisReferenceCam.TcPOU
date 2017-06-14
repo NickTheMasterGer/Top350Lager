@@ -1,0 +1,37 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI3_SetAxisReferenceCam" Id="{844a9d7d-77b7-44c4-90cb-1c28828ffcb3}">
+    <Declaration><![CDATA[FUNCTION HLI3_SetAxisReferenceCam : BOOL
+VAR_INPUT
+	nHliAxisIdx: INT;
+	bReferenceCam: BOOL;
+END_VAR
+VAR
+	/// Index of axis specific HLI area 
+	nHliAxIfcIdx: INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: HLI_SetAxisReferenceCam                           *)
+(* --------------------------------------------------------- *)
+(*   Desc:                                                   *)
+(* Author: MK,MiB                                            *)
+(*   Date: 30.11.2012                                        *)
+(*   Rev.: 1.1                                               *)
+(* ========================================================= *)
+
+
+IF NOT HLI3_CheckAxisValid(nHliAxisIdx := nHliAxisIdx) THEN
+	HLI3_SetAxisReferenceCam := FALSE;
+	RETURN;
+END_IF
+
+(* set reference cam *)
+gpAx[nHliAxisIdx]^.lr_mc_control.reference_cam.enable_w  := TRUE;
+gpAx[nHliAxisIdx]^.lr_mc_control.reference_cam.command_w := bReferenceCam;
+
+HLI3_SetAxisReferenceCam := TRUE;]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

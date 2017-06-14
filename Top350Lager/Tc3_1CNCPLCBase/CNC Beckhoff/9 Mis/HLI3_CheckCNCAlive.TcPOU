@@ -1,0 +1,53 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.20">
+  <POU Name="HLI3_CheckCNCAlive" Id="{1fab1aa4-10d7-4511-bbda-4a7a27899870}">
+    <Declaration><![CDATA[PROGRAM HLI3_CheckCNCAlive
+VAR_INPUT
+	nChanIdx: INT;
+END_VAR
+
+VAR
+	bMessageDisplayed : BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* The assumption is made that the cycle time of the PLC is at least twice as big as the CNC cycle time.
+
+The Cycle time of CNC is displayed in element:
+	pMC[1]^.addr^.HLIHeadChannel_Data.LCWatchDogUnit_lc.D_cycle_time_r
+
+remark: Take care if PLC cycle is smaller not to check CNC faster as possible !!!
+
+To simulate failure of CNC set cycle time of PLC smaller than CNC (Resource/task configuration).
+*)
+
+// HLI3_CheckCNCAlive := FALSE;
+IF NOT HLI3_CheckChannelValid(nChannel := nChanIdx) THEN
+	RETURN;
+END_IF
+ 
+(* Copy current state of live sign to watchdog state    *)
+gpCh[nChanIdx]^.head.lc_watchdog.alive_rw
+	:= gpCh[nChanIdx]^.head.lc_watchdog.alive_rw;
+
+IF gpCh[nChanIdx]^.head.lc_watchdog.alive_rw = FALSE AND NOT bMessageDisplayed THEN
+	(* PLC detects CNC not alive -> start individual emergency stop within PLC *)
+	ADSLOGSTR( msgCtrlMask := ADSLOG_MSGTYPE_ERROR OR
+							ADSLOG_MSGTYPE_MSGBOX OR
+							ADSLOG_MSGTYPE_LOG,
+			msgFmtStr := 'PLC detects CNC not alive: %s',
+			strArg := 'channel 1');
+			
+			bMessageDisplayed := TRUE;
+END_IF
+
+
+(* assign return value *)
+//HLI3_CheckCNCAlive := gpCh[nChanIdx]^.head.lc_watchdog.alive_rw;
+
+(* reset live sign for next cycle *)
+gpCh[nChanIdx]^.head.lc_watchdog.alive_rw := FALSE;
+]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

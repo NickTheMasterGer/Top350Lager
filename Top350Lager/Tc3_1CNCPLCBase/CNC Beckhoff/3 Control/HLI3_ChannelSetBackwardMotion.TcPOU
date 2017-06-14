@@ -1,0 +1,31 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI3_ChannelSetBackwardMotion" Id="{06598cd5-faaf-4505-9e68-7857296f1a51}">
+    <Declaration><![CDATA[FUNCTION HLI3_ChannelSetBackwardMotion : BOOL
+VAR_INPUT
+	/// Number of channel 
+	nChanIdx: INT;
+	bBackwardMotion: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: HLI_ChannelSetBackwardMotion                      *)
+(* --------------------------------------------------------- *)
+(*   Desc:                                                   *)
+(* Author: MK, MiB                                           *)
+(*   Date: 20.11.2012                                        *)
+(*   Rev.: 1.1                                               *)
+(* ========================================================= *)
+
+HLI3_ChannelSetBackwardMotion := FALSE;
+IF NOT HLI3_CheckChannelValid(nChannel := nChanIdx) THEN
+	RETURN;
+END_IF
+
+gpCh[nChanIdx]^.bahn_mc_control.backward_motion.command_w := bBackwardMotion;
+
+HLI3_ChannelSetBackwardMotion := TRUE;]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

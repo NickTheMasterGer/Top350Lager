@@ -1,0 +1,156 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI3_ChannelResetRequest" Id="{ab29a8d9-1bae-49ea-a324-2894f5a78f9c}">
+    <Declaration><![CDATA[FUNCTION_BLOCK HLI3_ChannelResetRequest
+VAR_INPUT
+	bExec: BOOL;
+	/// Channel number 
+	nChanIdx: INT;
+	pChannel: POINTER TO ST_CncChannel;
+END_VAR
+VAR_OUTPUT
+	bBusy: BOOL;
+	bSwitchMode: BOOL;
+	nMode: UDINT;
+END_VAR
+VAR
+	fbRtrigExec: R_TRIG;
+	/// Index of channel specific HLI area 
+	nHliChIfcIdx: INT;
+	nState: UINT;
+	pCommand: POINTER TO HLI_PROC_TRANS_TO_MODE_STATE;
+	actualMode: UDINT;
+	fbTON: TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(******************************************************************************)
+(* POU:				HLI_ChannelResetRequest									*)
+(* Type:				Function block										*)
+(* Customer:		Common													*)
+(* Date:				07/11/16											*)
+(* Last:				10/03/10											*)
+(* -------------------------------------------------------------------------- *)
+(* Revision:		1.0														*)
+(* Author:			MiB														*)
+(* Description: 	Performs a reset in the given cnc channel. 				*)
+(* -------------------------------------------------------------------------- *)
+(* Revision:		1.10													*)
+(* Author:			MiB														*)
+(* Description: 	Changed from PRG to FB.									*)
+(* -------------------------------------------------------------------------- *)
+(* Revision:		2.00															*)
+(* Author:			HR																*)
+(* Description: 	Deleted references to global variable 'PLCMachineMode[n]'.		*)
+(*						The FB now works with VAR_OUTPUT 'nMode' and 'bSwitchMode'	*)
+(*						as a callback to the initiator to let it perform the change	*)
+(*						of the operation mode by itself in order to reset the cnc	*)
+(*						channel.													*)
+(* -------------------------------------------------------------------------- *)
+(* Revision:		2.01																			*)
+(* Author:			TV																				*)
+(* Description: 	Expand State "Wait for previous mode"  *)
+(*				Prevent to trigger the state machine during the mode switch							*)
+(* -------------------------------------------------------------------------- *)
+(* Revision:		2.02																			*)
+(* Author:			MiB																				*)
+(* Description: 	Tc3*)
+(******************************************************************************)
+
+
+fbRtrigExec( clk := bExec   );
+
+IF fbRtrigExec.Q THEN
+	bBusy := TRUE;
+	nState := 10;
+END_IF
+
+
+CASE nState OF
+
+0:		(* IDLE *)
+		bBusy := FALSE;
+
+10:	(* Reset request: get actual opmode *)
+		bSwitchMode := FALSE;
+		actualMode := gpCh[nChanIdx]^.channel_mc_control.mode_and_state.state_r.mode;
+		nState := nState + 10;
+
+20:  (* switch to standby *)
+		bSwitchMode := TRUE;
+		nMode:= HLI_IMCM_STANDBY_MODE;
+		fbTON(IN:= FALSE);
+		nState := nState + 10;
+
+30: 	(* Wait for modeswitch *)
+		bSwitchMode := FALSE;
+		fbTON(IN:= TRUE, PT:= t#2000ms);
+	 	IF gpCh[nChanIdx]^.channel_mc_control.mode_and_state.state_r.mode = HLI_IMCM_STANDBY_MODE THEN
+			nState := nState + 10;
+		END_IF
+		IF fbTON.Q THEN
+			(* Timeout Error -> go on with next step *)
+			nState := nState + 10;
+		END_IF
+
+40:	(* switch back to previous mode *)
+		bSwitchMode := TRUE;
+		nMode:= actualMode;
+		fbTON(IN:= FALSE);
+		nState := nState + 10;
+
+50:	(* Wait for previous mode  *)
+		fbTON(IN:= TRUE, PT:= t#2000ms);
+		IF (gpCh[nChanIdx]^.channel_mc_control.mode_and_state.state_r.mode = 	actualMode) THEN
+			nState := nState + 10;
+		END_IF
+		IF fbTON.Q THEN
+			(* Timeout Error -> go on with next step *)
+			nState := nState + 10;
+		END_IF
+
+60: 	(* ready *)
+		bSwitchMode := FALSE;
+		nState := 0;
+
+END_CASE
+
+
+
+(* das muss ins aufrufende Programm: (HLI_CNCChannel)
+
+VAR
+	bResetRequest:			BOOL;
+	fbRTrigReset:			R_TRIG;
+	ChannelResetRequest: HLI_ChannelResetRequest;
+END_VAR
+
+fbRTrigReset(clk := bStateReset);
+IF fbRTrigReset.Q THEN
+	bResetRequest := TRUE;
+	...
+END_IF
+
+(* Handle Channel reset *)
+ChannelResetRequest
+	(bExec 		:= bResetRequest ,
+	 nChan 		:= nChan,
+	 pChannel	:= ADR(CNCSystem.Channel[nChan])
+	);
+
+IF ChannelResetRequest.bSwitchMode THEN
+	bModeStandby	:= bModeStandby OR (ChannelResetRequest.nMode = HLI_IMCM_STANDBY_MODE);
+	bModeAutomatic	:= bModeAutomatic OR (ChannelResetRequest.nMode = HLI_IMCM_AUTOMATIC_MODE);
+	bModeManual		:= bModeManual OR (ChannelResetRequest.nMode = HLI_IMCM_MANUAL_MODE);
+	bModeMDI			:= bModeMDI OR (ChannelResetRequest.nMode = HLI_IMCM_MDI_MODE);
+	bModeReference	:= bModeReference OR (ChannelResetRequest.nMode = HLI_IMCM_REFERENCE_MODE);
+END_IF
+
+IF bResetRequest AND NOT ChannelResetRequest.bBusy THEN
+	bResetRequest := FALSE;
+END_IF
+
+*)]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

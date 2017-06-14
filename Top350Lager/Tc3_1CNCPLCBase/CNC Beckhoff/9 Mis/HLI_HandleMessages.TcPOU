@@ -1,0 +1,141 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI_HandleMessages" Id="{cc89fece-e0e2-44f1-9986-0ee52758a57d}">
+    <Declaration><![CDATA[FUNCTION_BLOCK HLI_HandleMessages
+VAR_INPUT
+	/// Enable 
+	bEnable: BOOL;
+	/// Number of channel 
+	nChanIdx: INT;
+	/// Channelstruct 
+	pChannel: POINTER TO ST_CncChannel;
+END_VAR
+VAR_OUTPUT
+	bNewMessage: BOOL;
+	bError: BOOL;
+	sMessage: STRING(255);
+END_VAR
+VAR
+	/// Index of channel specific HLI area 
+
+	bFirstCycle: BOOL := TRUE;
+	bModeChanged: BOOL;
+	nState: USINT;
+	nActMode: UDINT;
+	dwCncState: DWORD;
+	fbRtrigStateStart: R_TRIG;
+	pString: POINTER TO STRING(HLI_MSG_CONTENT_STRL);
+	fbLog: ADSLOGEVENT;
+	stMessageData: TcEvent;
+END_VAR
+VAR CONSTANT
+	sFormat: STRING(2) := '%s';
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(******************************************************************************)
+(* Name:		HLI_HandleMessages											 	*)
+(* Date:		08/12/01													 	*)
+(* Author:	H. Rausch (Beckhoff Automation GmbH)							 	*)
+(* Ver:		1.0																	*)
+(* Desc:		Function block for recieving messages from CNC and passing them to*)
+(*				the TwinCAT EventLogger. Only the latest message from CNC is 	*)
+(*				active there. The event will be resetted if a new message from	*)
+(*				CNC is recieved, the CNC state changes to 'ACTIVE', the CNC mode*)
+(*				is changed or the channel is resetted							*)
+(*																				*)
+(*				Messages are passed as a fill string to the event logger with 	*)
+(*				source id 9000 and event id 1. This requires a correspondant 	*)
+(*				configuration in the tceventsourcelocation.xml and in an		*)
+(*				associated message file!										*)
+(* ---------------------------------------------------------------------------*)
+(* Rev:		Add new version number here!										*)
+(* Date.		Add revision data here											*)
+(* Desc:		Add revision description here!									*)
+(******************************************************************************)
+
+(* Write event config data once on start up *)
+IF bFirstCycle THEN
+	stMessageData.bQuitRequired			:= TRUE;
+	stMessageData.Class					:= TCEVENTCLASS_MESSAGE;
+	stMessageData.DataFormatStrAddress	:= ADR(sFormat);
+	stMessageData.Prio					:= 0;
+	stMessageData.Id					:= 1;
+	stMessageData.SourceId 				:= 9000;
+	stMessageData.Flags 				:= TCEVENTFLAG_LOG OR TCEVENTFLAG_SRCID;
+	stMessageData.StreamType			:= TCEVENTSTREAM_SIMPLE;
+	stMessageData.ProgId 				:= 'TcEventFormatter.TcXmlFormatter';
+END_IF
+
+
+
+(* Check for zero pointer and leave fb if necessary *)
+IF NOT HLI3_CheckChannelValid(nChannel := nChanIdx) THEN
+	RETURN;
+END_IF
+	(* Check CNC state *)
+	dwCncState := HLI3_GetChannelState(nChanIdx:=nChanIdx);
+
+	(* Rising trig if CNC state changes to ACTIVE *)
+	fbRtrigStateStart
+		(CLK := (dwCncState = HLI_IMCM_PROCESS_ACTIVE));
+
+	(* Watch CNC mode *)
+	bModeChanged	:= (nActMode <> pChannel^.ActMode);
+	nActMode 		:= pChannel^.ActMode;
+
+IF NOT bEnable THEN
+	gpCh[nChanIdx]^.msg_mc_control.enable_w				:= FALSE;
+	gpCh[nChanIdx]^.msg_mc_control.request_semaphor_rw	:= FALSE;
+	sMessage										:= '';
+ELSE
+	gpCh[nChanIdx]^.msg_mc_control.enable_w 			:= TRUE;
+
+	CASE nState OF
+	 0:
+		(* Wait for new messages from CNC *)
+		IF gpCh[nChanIdx]^.msg_mc_control.request_semaphor_rw THEN
+			(* Convert byte stream to string *)
+			pString  := ADR(gpCh[nChanIdx]^.msg_mc_control.request_r.inhalt);
+			sMessage := pString^;
+			(* Reset notification from HLI *)
+			gpCh[nChanIdx]^.msg_mc_control.request_semaphor_rw := FALSE;
+
+			nState := 1;
+		END_IF
+
+	 1:
+		(* Wait that ADSEVENTLOG instance is cleared *)
+		IF (fbLog.EventState = 0) THEN
+			nState := 2;
+		END_IF
+
+	 2:
+		(* Set message to eventlogger *)
+		IF (fbLog.EventState > 0) THEN
+			nState := 0;
+		END_IF
+
+	END_CASE
+
+	(* Managing Eventlogger *)
+	fbLog
+		(NETID				:= '',
+		 PORT					:= 110,
+		 Event				:= (nState = 2),
+		 EventQuit			:= (nState = 1) OR
+									(dwCncState = HLI_IMCM_PROCESS_RESETTING) OR
+									fbRtrigStateStart.Q OR
+									bModeChanged,
+		 EventConfigData	:= stMessageData,
+		 EventDataAddress	:= ADR(sMessage),
+		 EventDataLength	:= SIZEOF(sMessage),
+		 TMOUT				:= t#2s
+		);
+END_IF
+
+(* Reset first cycle indicator *)
+bFirstCycle := FALSE;]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

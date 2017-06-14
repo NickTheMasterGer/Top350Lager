@@ -1,0 +1,17 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="ST_WKZDaten" Id="{21f1bb66-cd52-4f4e-ad37-6131f582b775}">
+    <Declaration><![CDATA[TYPE ST_WKZDaten :
+STRUCT
+	nAblageX: LREAL;
+	nAblageY: LREAL;
+	nWkzLaenge: LREAL;
+	nWkzRadius: LREAL;
+	nStandzeit: LREAL;
+	nStandWeg: LREAL;
+	nReserve: ARRAY[7..40] OF LREAL;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

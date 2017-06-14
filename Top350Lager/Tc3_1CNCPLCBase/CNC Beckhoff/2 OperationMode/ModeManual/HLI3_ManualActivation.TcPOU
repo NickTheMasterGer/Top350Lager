@@ -1,0 +1,184 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4019.0">
+  <POU Name="HLI3_ManualActivation" Id="{dc127c8c-e0ee-4ca5-87da-045f6c19225a}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK HLI3_ManualActivation
+VAR_INPUT
+	bExecute: BOOL;
+	/// Number of channel 
+	nChan: INT;
+	eManualType: E_CNC_ManualType;
+	/// Increments -> 0 activates Tip mode 
+	Inc: UDINT;
+	/// Aufloesung des Achsverfahrwegs bei einer Handradumdrehung Einheit: 0.1um / Handradumdrehung
+	nHBA_Res: DINT;
+	Speed: UDINT;
+	/// axis nr 
+	nLogAxisNr: UINT;
+	nInputParameterIdx: INT;
+END_VAR
+VAR_OUTPUT
+	bError: BOOL;
+	bBusy: BOOL;
+END_VAR
+VAR_IN_OUT
+	stManualModeControlElementState: ST_ManualModeControlElementState;
+END_VAR
+VAR
+	fbRtrigExec: R_TRIG;
+	nState: INT;
+	pActivation: POINTER TO MC_CONTROL_HB_ACTIVATION_UNIT;
+	pJogParameter: POINTER TO MC_CONTROL_HB_JOG_PARAM_UNIT;
+	pTipParameter: POINTER TO MC_CONTROL_HB_TIP_PARAM_UNIT;
+	pHBHRParameter: POINTER TO MC_CONTROL_HB_HR_PARAM_UNIT;
+	j: INT;
+	bFreeControlElementFound: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: HLI_ManualActivation                       		 *)
+(* --------------------------------------------------------- *)
+(*   Desc:                                                   *)
+(*   Author: CL TV MiB                                       *)
+(*   Date: 18.11.2005                                        *)
+(*   Last: 25.02.2015                                       *)
+(*   Rev.: 6.0                                              *)
+(* ========================================================= *)
+
+IF NOT HLI3_CheckChannelValid(nChannel := nChan) OR nLogAxisNr = 0 THEN
+	RETURN;
+END_IF
+
+
+fbRtrigExec(clk := bExecute);
+IF fbRtrigExec.Q THEN
+	bBusy := TRUE;
+	bError := FALSE;
+	nState := 10;
+END_IF
+
+CASE nState OF
+
+	0: (* IDLE *)
+		bBusy := FALSE;
+
+	10:
+		CASE eManualType OF
+			E_CNC_ManualType.NoManualMode: 
+				nState := 100;
+
+			E_CNC_ManualType.Handwheel:
+				nState := 30;
+
+			E_CNC_ManualType.TippMode:
+				nState := 40;
+
+			E_CNC_ManualType.JogMode:
+				nState := 50;
+
+			E_CNC_ManualType.JoystickMode:
+				nState := 40;
+
+			E_CNC_ManualType.DigitalJoystick: 
+				nState := 40;
+
+		END_CASE
+
+	30:(* Setze Handrad Parameter *)
+		pHBHRParameter := ADR(gpCh[nChan]^.hb_mc_control.hr_parameter);
+		IF NOT pHBHRParameter^.command_semaphor_rw THEN
+			pHBHRParameter^.enable_w := TRUE;
+			pHBHRParameter^.command_w.resolution  := nHBA_Res;
+			pHBHRParameter^.command_w.log_achs_nr := nLogAxisNr;
+			pHBHRParameter^.command_semaphor_rw := TRUE;
+			nState := 100;
+		END_IF
+
+	40: (* Setze Parameter für den Tippbetrieb *)
+		pTipParameter := ADR(gpCh[nChan]^.hb_mc_control.tip_parameter);
+		IF NOT pTipParameter^.command_semaphor_rw THEN
+			pTipParameter^.enable_w := TRUE;
+			pTipParameter^.command_w.log_achs_nr := nLogAxisNr;
+			pTipParameter^.command_w.speed       := Speed;
+			pTipParameter^.command_semaphor_rw := TRUE;
+			nState := 100;
+		END_IF
+
+	50: (* Setze Parameter für den Jogbetrieb *)
+		pJogParameter := ADR(gpCh[nChan]^.hb_mc_control.jog_parameter);
+		IF NOT pJogParameter^.command_semaphor_rw THEN
+			pJogParameter^.enable_w := TRUE;
+			pJogParameter^.command_w.log_achs_nr := nLogAxisNr;
+			pJogParameter^.command_w.distance    := Inc;
+			pJogParameter^.command_w.speed       := Speed;
+			pJogParameter^.command_semaphor_rw := TRUE;
+			nState := 100;
+		END_IF		
+		
+	100: 	(* Aktivierung der Bedienelementen für den Handbetrieb  *)		
+		
+		pActivation := ADR(gpCh[nChan]^.hb_mc_control.activation);
+		IF NOT pActivation^.command_semaphor_rw THEN 
+			bFreeControlElementFound := FALSE;
+
+
+			IF 	eManualType <> E_CNC_ManualType.Handwheel THEN 	
+				FOR j := 0 TO HLI_KEY_MAXIDX DO
+					IF stManualModeControlElementState.stKeyUnit[j].nLogAxisId = 0 THEN
+							stManualModeControlElementState.stKeyUnit[j].nLogAxisId := nLogAxisNr;
+							stManualModeControlElementState.stKeyUnit[j].nChan := nChan;
+							stManualModeControlElementState.stKeyUnit[j].nInputParameterIdx := nInputParameterIdx;
+							bFreeControlElementFound := TRUE;
+						EXIT;
+					END_IF 
+				END_FOR
+			ELSE
+				FOR j := 0 TO HLI_HW_MAXIDX DO
+					IF stManualModeControlElementState.stHWUnit[j].nLogAxisId = 0 THEN
+							stManualModeControlElementState.stHWUnit[j].nLogAxisId := nLogAxisNr;
+							stManualModeControlElementState.stHWUnit[j].nChan := nChan;
+							stManualModeControlElementState.stHWUnit[j].nInputParameterIdx := nInputParameterIdx;
+							bFreeControlElementFound := TRUE;
+						EXIT;
+					END_IF 
+				END_FOR
+			END_IF
+							
+			IF bFreeControlElementFound THEN
+				pActivation^.enable_w := TRUE;
+				pActivation^.command_w.log_achs_nr := nLogAxisNr;
+				pActivation^.command_w.control_element := INT_TO_UINT(j+1);
+		
+		
+				CASE eManualType OF
+					E_CNC_ManualType.NoManualMode: 
+						pActivation^.command_w.operation_mode := 0; 	(* 0 - No OP_Mode *)
+		
+					E_CNC_ManualType.Handwheel: 
+						pActivation^.command_w.operation_mode := 1; 	(* 1 - Handwheel *)
+		
+					E_CNC_ManualType.TippMode: 
+						pActivation^.command_w.operation_mode := 2; 	(* 2 - Tip Mode continous *)
+		
+					E_CNC_ManualType.JogMode: 
+						pActivation^.command_w.operation_mode := 3; 	(* 3 - Jog Mode (incremental *)
+		
+					E_CNC_ManualType.JoystickMode: 
+						pActivation^.command_w.operation_mode := 2; 	(* 2 - Tip Mode continous, auch für Analog Joystick *)
+		
+					E_CNC_ManualType.DigitalJoystick: 
+						pActivation^.command_w.operation_mode := 2; 	(* 2 - Tip Mode continous, auch für Digital Joystick *)
+		
+				END_CASE
+			
+				pActivation^.command_semaphor_rw := TRUE;
+				nState := 0;
+			ELSE
+				bError := TRUE;
+				nState := 0;
+			END_IF
+		END_IF						
+END_CASE]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

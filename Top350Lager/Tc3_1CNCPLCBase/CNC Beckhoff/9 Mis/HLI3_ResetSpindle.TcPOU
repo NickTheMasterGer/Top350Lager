@@ -1,0 +1,37 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI3_ResetSpindle" Id="{1607a031-6590-43c0-a626-f9a4a6502c38}">
+    <Declaration><![CDATA[FUNCTION HLI3_ResetSpindle : BOOL
+VAR_INPUT
+	/// axis number of spindle 
+	nHliAxisIdx: INT;
+END_VAR
+VAR
+	/// Index of axis specific HLI area 
+	nHliAxIfcIdx: INT;
+	SpdlState: BOOL;
+	SpdlCommand: BOOL;
+	ResetCmd: BOOL := FALSE;
+	/// local pointer to data of actual axis 
+	pResetUnit: POINTER TO MC_CONTROL_BOOL_UNIT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[HLI3_ResetSpindle := FALSE;
+
+IF NOT HLI3_CheckAxisValid(nHliAxisIdx := nHliAxisIdx) THEN
+	HLI3_ResetSpindle := FALSE;
+	RETURN;
+END_IF
+
+	pResetUnit := ADR(gpAx[nHliAxisIdx]^.ipo_mc_control.spdl_reset);
+	SpdlState  := pResetUnit^.state_r;
+
+	IF ResetCmd = TRUE THEN
+		pResetUnit^.command_w := TRUE;
+		SpdlCommand           := pResetUnit^.command_w;
+		HLI3_ResetSpindle          := SpdlState;
+	END_IF]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

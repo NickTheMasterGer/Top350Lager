@@ -1,0 +1,28 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.23">
+  <DUT Name="ST_PDatLineProgLine" Id="{55e4d1ab-3e4f-40fb-b027-b381786601de}">
+    <Declaration><![CDATA[TYPE ST_PDatLineProgLine :
+STRUCT
+	/// @1:Verechung der Teilelaenge/Breite in den Streckenwerkzeugen @11:2
+	nSpezModus: INT;
+	/// @1: Schaltmodus @11:2
+	nSchaltmodus: INT;
+	/// @1: Schaltkante ein @11:2
+	nSchaltkanteEin: INT;
+	/// @1: Schaltkante aus @11:2
+	nSchaltkanteAus: INT;
+	/// @1: Korrektur Schaltwert ein 				@2:mm @11:2
+	fKorrSchaltwertEin: LREAL; 
+	/// @1: Korrektur Schaltwert aus 				@2:mm @11:2
+	fKorrSchaltwertAus: LREAL;
+	///	@1: Korrektur Impluslänge 					@2:mm @11:2
+	fKorrImpulslaenge: LREAL;
+	/// @1: Korrektur Reaktionszeit Einsetzen 	@2:s @11:2
+	fKorrReaktionszeitEinsetzen: LREAL;
+	/// @1: Korrektur Reaktionszeit Aussetzen 	@2:s @11:2
+	fKorrReaktionszeitAussetzen: LREAL;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

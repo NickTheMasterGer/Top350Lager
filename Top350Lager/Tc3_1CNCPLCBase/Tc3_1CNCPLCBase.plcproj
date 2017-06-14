@@ -1,0 +1,1041 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == ''">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{62c75926-3cf3-4344-9365-004252958c49}</ProjectGuid>
+    <Name>Tc3_1CNCPLCBase</Name>
+    <ExternalTypes>
+      <Type Guid="{18071995-0000-0000-0000-000000000019}">HRESULT</Type>
+      <Type Guid="{18071995-0000-0000-0000-000000000025}">IID</Type>
+      <Type Guid="{00000030-0000-0000-e000-000000000064}">ITComObjectServer</Type>
+      <Type Guid="{02000002-0000-0000-e000-000000000064}">ITcTask</Type>
+      <Type Guid="{00000001-0000-0000-e000-000000000064}">ITcUnknown</Type>
+      <Type Guid="{d91e046a-a488-4d27-8d43-0f3c40ed5081}">PlcAppSystemInfo</Type>
+      <Type Guid="{6a76d020-03a2-465c-a678-c341951e9ef3}">PlcTaskSystemInfo</Type>
+      <Type Guid="{6f5942ed-bfa1-497d-8225-23c6daad0a09}">ST_LibVersion</Type>
+    </ExternalTypes>
+    <FileVersion>1.0.0.0</FileVersion>
+    <LibraryReferences>{630c390c-4d77-4a0c-bf95-5d55297f941f}</LibraryReferences>
+    <Company>Beckhoff Automation GmbH &amp; Co. KG</Company>
+    <Title>CNC PLC Project</Title>
+    <Released>true</Released>
+    <CompilerDefines />
+    <dynamic_memory_size>
+    </dynamic_memory_size>
+    <ProgramVersion>3.1.4020.0</ProgramVersion>
+    <ProjectVersion>3.1.3035.30</ProjectVersion>
+    <Application>{567cf854-5129-4996-bae3-274f1a0a806e}</Application>
+    <TypeSystem>{8d181cc9-6559-4e90-ae2b-37335799872a}</TypeSystem>
+    <Implicit_Task_Info>{96c11b3b-0257-4cba-aae2-c74eda85e3d9}</Implicit_Task_Info>
+    <Implicit_KindOfTask>{3cca7c88-e45b-4ddc-94e9-39c1d289ac2c}</Implicit_KindOfTask>
+    <Implicit_Jitter_Distribution>{767a1de4-ee68-4aac-b805-638e5efb0fb2}</Implicit_Jitter_Distribution>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' " />
+  <ItemGroup>
+    <Folder Include="CNC Beckhoff\1 Init" />
+    <Folder Include="CNC Beckhoff\2 OperationMode" />
+    <Folder Include="CNC Beckhoff\2 OperationMode\ModeManual" />
+    <Folder Include="CNC Beckhoff\3 Control" />
+    <Folder Include="CNC Beckhoff\4 MHT-Function" />
+    <Folder Include="CNC Beckhoff\5 Variables" />
+    <Folder Include="CNC Beckhoff\6 BlockSearch" />
+    <Folder Include="CNC Beckhoff\9 Mis" />
+    <Folder Include="CNC Beckhoff\Messages" />
+    <Folder Include="CNC Beckhoff\Demo" />
+    <Folder Include="CNC Beckhoff\Util" />
+    <Folder Include="CNC Beckhoff" />
+    <Folder Include="Data types" />
+    <Folder Include="Data types\CNC_DataTyps" />
+    <Folder Include="Data types\CNC_ManualMode" />
+    <Folder Include="Data types\CNC_VariablesViewer" />
+    <Folder Include="Data types\CNC_WriteParameter" />
+    <Folder Include="Data types\EtherCAT Diag" />
+    <Folder Include="Data types\EventLogger" />
+    <Folder Include="Data types\General SoE DTs" />
+    <Folder Include="Data types\Magazin" />
+    <Folder Include="Data types\MaschinenDaten PlcStructure" />
+    <Folder Include="Data types\CNC_FastMFunction" />
+    <Folder Include="Data types\Recipe" />
+    <Folder Include="Data types\SERCOS" />
+    <Folder Include="Global Variables" />
+    <Folder Include="Global Variables\Examples" />
+    <Folder Include="Version" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CNC Beckhoff\1 Init\HLI3_InitToolConfig.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{13118ec3-3b59-4943-aef0-fd7b6149b19e}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\1 Init\HLI3_Init.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CNC Beckhoff\1 Init\HLI3_SetAxisControlToPlc.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{5587e0c3-fc2c-4ae8-8768-64da10d00ca1}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\1 Init\HLI3_SetChannelControlToPlc.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{592622f2-0537-4280-b19a-633cf598fccc}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\1 Init\HLI3_UserInitialisation.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{3760070a-2646-490f-8384-b8ed4de0d32a}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\2 OperationMode\HLI3_AxisReset.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{bc21ca53-5050-4df4-9152-22de208a78bb}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\2 OperationMode\HLI3_ChannelModeAuto.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{58621349-8bf2-4dcb-a356-a2812624c67a}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\2 OperationMode\HLI3_ChannelModeManual.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{1455db01-4a84-47f0-8a6e-718c9bfa1bc9}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\2 OperationMode\HLI3_ChannelModeMDI.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{3660f3c0-69f2-417f-a868-31e851ae08a9}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\2 OperationMode\HLI3_ChannelModeReference.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{b54ff124-577d-4d02-a475-c69c8d34d14f}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\2 OperationMode\HLI3_ChannelModeStandby.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{c2462971-3aae-4696-84ae-c3ddac91a2ae}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\2 OperationMode\HLI3_ChannelReset.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{367accb4-812a-4d62-b3f3-b000c5327b3f}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\2 OperationMode\HLI3_ChannelResetRequest.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{ab29a8d9-1bae-49ea-a324-2894f5a78f9c}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\2 OperationMode\HLI3_CNCChannel.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{db4c6fa7-4d6a-42b0-8f5a-14a632b2eb72}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\2 OperationMode\ModeManual\HLI3_LogicalAxisInManualMode.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectProtection>00000000-0000-0000-0000-000000000000</ObjectProtection>
+    </Compile>
+    <Compile Include="CNC Beckhoff\2 OperationMode\ModeManual\HLI3_ManualActivation.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectProtection>00000000-0000-0000-0000-000000000000</ObjectProtection>
+    </Compile>
+    <Compile Include="CNC Beckhoff\2 OperationMode\ModeManual\HLI3_ManualExecution.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectProtection>00000000-0000-0000-0000-000000000000</ObjectProtection>
+    </Compile>
+    <Compile Include="CNC Beckhoff\2 OperationMode\ModeManual\HLI3_ManualExecutionRapidMode.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectProtection>00000000-0000-0000-0000-000000000000</ObjectProtection>
+    </Compile>
+    <Compile Include="CNC Beckhoff\2 OperationMode\ModeManual\HLI3_ManualModeHandler.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectProtection>00000000-0000-0000-0000-000000000000</ObjectProtection>
+    </Compile>
+    <Compile Include="CNC Beckhoff\2 OperationMode\ModeManual\PRG_AnalogJoystick.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectProtection>00000000-0000-0000-0000-000000000000</ObjectProtection>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\FB_Diag.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{a88242f6-fb2d-4fb1-b417-5c69a9a55e74}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_ChannelSetBackwardMotion.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{06598cd5-faaf-4505-9e68-7857296f1a51}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_ChannelSetEmergencyStop.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{7abc190b-746d-44b1-86ad-aad7ec9d16d7}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_ChannelSetFeedHold.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{dff122ce-4dca-4ab9-8b1a-9351d1f31326}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_ChannelSetProgramBlockIgnore.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{d548f34b-0684-4706-9240-a526c321fa7b}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_ChannelSetReducedFeed.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{03eb1211-42dc-4b3d-b0e1-de00b1870ad1}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_ChannelSetSingleBlock.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{8c6736c5-834c-444d-9957-8ac3db04e3b5}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_ChannelSetSuspendAxisOutput.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{1e8bafc1-e16d-4c62-a346-d6b51b633489}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_ClearReferencePosition.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectProtection>00000000-0000-0000-0000-000000000000</ObjectProtection>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_GetActualAxisPos.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{cfd8a458-4bc6-439f-ba90-e6344bd975f0}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_GetAxisReferenceState.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{16372193-946b-4125-90ee-8713a0247470}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_GetChannelActiveG.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_GetChannelError.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectProtection>00000000-0000-0000-0000-000000000000</ObjectProtection>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_GetChannelMessage.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{c9da26ed-e382-4759-a20e-45ca6aedfe35}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_GetChannelMode.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{0f7b2308-26ff-40f0-b6f0-0d8c35b98926}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_GetChannelState.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{28159ab0-70f0-444c-9e7d-20b75ec09b98}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_GetChannelStatusInfo.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{57c38489-bc31-45b2-b563-39475c82f71f}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_GetEtherCATAxisInfo.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{425a0fc0-f7bc-4c67-b4b3-e49b2a7580d0}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_GetFeedholdState.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{d4fcd764-7110-40a8-94d5-43fe9f1ced1f}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_GetIpoState.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{71e85e22-595d-4b23-91f7-c7b0954e79a6}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_HandleSpindleTechno.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_HandleSpindleTechnoGearchange.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_SetAxisGantryOn.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{751bd63e-5062-4885-abf8-5cb03f673379}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_SetAxisOverride.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_SetAxisReferenceCam.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{844a9d7d-77b7-44c4-90cb-1c28828ffcb3}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_SetAxisReferencePosition.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{7ae2f890-f0b2-4f9c-9295-3d0eca9a5df7}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_SetAxisRelease.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_SetAxisSpindleStopAtProgramEnd.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{14a9916c-6422-43d4-add3-29c8c01704a0}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_SetAxisTrackingOperation.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{801004ce-cb4c-4716-a1e5-08e359130ca3}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_SetChannelOverride.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{02f12908-3a70-4d2c-a9a1-37af27cb3b94}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\3 Control\HLI3_SetProbingSignal.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{4969e280-1a3d-43a6-b4bb-220734708a3a}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\4 MHT-Function\HLI3_ChannelResetHFunctions.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{0c3ad6dd-1b2b-4f17-a481-e92ebebdde43}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\4 MHT-Function\HLI3_ChannelResetMFunctions.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{d462947c-debf-40c3-9672-4209fe3824e0}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\4 MHT-Function\HLI3_DoChannelHFunction.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{3ad9cafe-ba81-4e5e-a5f6-4229969237ef}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\4 MHT-Function\HLI3_DoChannelMFunction.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{3b1646f4-155c-44d4-ae6b-30083649ca97}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\4 MHT-Function\HLI3_DoChannelTFunction.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{c1825061-dadb-456f-af0b-e1291cd7337d}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\4 MHT-Function\HLI3_FastMFunctionHandler.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CNC Beckhoff\4 MHT-Function\HLI3_FastMFunctionProvider.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CNC Beckhoff\4 MHT-Function\HLI3_QuitAxisMFunction.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{f44ef96f-3063-4481-b0f6-e1b5a6564330}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\4 MHT-Function\HLI3_QuitChannelMHTFunction.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{9bacb5e6-1c87-4b6b-9e22-af8c20d31d21}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\4 MHT-Function\PRG_FastMFunctions.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CNC Beckhoff\5 Variables\FB_ReadCNCVariables.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CNC Beckhoff\5 Variables\HLI3_GetVEChannelDIntValue.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{2de9f4ab-37c7-4bba-9822-8a3507e260c4}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\5 Variables\HLI3_GetVEChannelBooleanValue.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CNC Beckhoff\5 Variables\HLI3_GetVEChannelLRealValue.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{57d597d6-945b-43bf-8728-331d846e1300}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\5 Variables\HLI3_GetVEChannelStringValue.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{81d1f87b-d722-433a-83de-734ba2bb63a7}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\5 Variables\HLI3_LinkVEChannelStructure.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{fa229068-bbc6-4c2b-8511-52cc01a61b31}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\5 Variables\HLI3_SetVEChannelDIntValue.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{45adec52-70fa-485b-8d70-aa0546726e1a}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\5 Variables\HLI3_SetVEChannelBooleanValue.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CNC Beckhoff\5 Variables\HLI3_SetVEChannelLRealValue.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{28b3b11f-ad64-4e33-ba59-28cc306b5968}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\5 Variables\HLI3_SetVEChannelStringValue.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{7b41fb33-e501-4d72-8c5c-fd9799bca252}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\6 BlockSearch\HLI3_BlockSearch.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{cfdf3cb1-c810-4eda-8fd1-1f9af887b9bd}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\6 BlockSearch\ReadBlockCount.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{a8b0bc4a-97c6-4c10-aac9-de2c3fc0154b}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\6 BlockSearch\ReadBlockNumber.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{4014306c-8c06-48ce-b420-6d443610e815}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\6 BlockSearch\ReadBsAutoReturn.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{5a53fd80-6c86-4ef8-abe2-3ab40a0b9698}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\6 BlockSearch\ReadBsBlockCount.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{afb079f5-eda0-4c86-9066-7b55f1e52c7e}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\6 BlockSearch\ReadBsBlockNumber.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{e6362043-9d04-4d23-acb0-850952ca365a}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\6 BlockSearch\ReadBsCoveredDistance.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{a9bb39de-6e37-4b2c-858b-a3d228672d13}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\6 BlockSearch\ReadBsDeviationMax.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{829f9ccc-a0fd-4048-9f1f-4390e9af290c}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\6 BlockSearch\ReadBsPass.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{65218f86-8b9d-40ec-96a0-ecf9c560b015}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\6 BlockSearch\ReadBsType.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{fca0caa9-3d5d-49a9-a80d-44ac099118ad}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\6 BlockSearch\WriteBsAutoReturn.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{b1a23065-ff4a-4712-b65b-898f775f2198}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\6 BlockSearch\WriteBsBlockCount.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{ab29fb1f-e910-4de8-914b-5f9722760b28}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\6 BlockSearch\WriteBsBlockNumber.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{b426e6ed-9c66-474b-844d-9ec8b897b058}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\6 BlockSearch\WriteBsCoveredDistance.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{db4f867a-ef78-4b7f-bc5d-8f48a9355b10}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\6 BlockSearch\WriteBsDeviationMax.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{1c52a991-fcc6-4f8e-a952-ad6fbdbb4d56}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\6 BlockSearch\WriteBsPass.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{bc51697a-6596-4873-8f53-0fdbb8075c74}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\6 BlockSearch\WriteBsType.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{af281b27-8172-41eb-982a-e6ce84955cb9}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\9 Mis\ADSLOG.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{76715769-c214-4fa8-b784-10e8cc7574da}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\9 Mis\FB_WriteCNCZeroOffset.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CNC Beckhoff\9 Mis\FB_WriteCNCZeroOffsetDefault.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CNC Beckhoff\9 Mis\HLI3_CheckAxisValid.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{febd30f6-c5e5-4c37-b631-4c6fedee5faf}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\9 Mis\HLI3_CheckChannelValid.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{1072185c-a2c8-4d3b-9cf5-dd16eea395c6}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\9 Mis\HLI3_CheckCNCAlive.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CNC Beckhoff\9 Mis\HLI3_GetHliAxisIdx.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{531bd0c2-02b2-4f64-addf-34c27b6b61c6}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\9 Mis\HLI3_GetLogAxisId.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CNC Beckhoff\9 Mis\HLI3_SetPLCAlive.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CNC Beckhoff\9 Mis\HLI_HandleMessages.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{cc89fece-e0e2-44f1-9986-0ee52758a57d}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\9 Mis\HLI_MoveSpindle.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{a45192d9-dff6-4aec-8677-90f1b0e9714b}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\9 Mis\PB_10_CNC_Spindelkopplung.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{06a0acd9-8576-4651-a1c3-59c79e201a4b}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\9 Mis\HLI3_ResetSpindle.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{1607a031-6590-43c0-a626-f9a4a6502c38}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\Demo\PRG_Demo.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CNC Beckhoff\Demo\PRG_MachineStatusV2.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CNC Beckhoff\Messages\FB_ChannelError.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CNC Beckhoff\Messages\FB_EventLog.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{da36b043-54ec-4ef5-aae3-1b59f96212d1}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\Messages\FB_ExtSimpleEventLog.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{715e4e5f-ea7f-48d3-986e-f1a58d16fa50}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\Messages\FB_SimpleEventLog.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectProtection>00000000-0000-0000-0000-000000000000</ObjectProtection>
+    </Compile>
+    <Compile Include="CNC Beckhoff\PRG_AxesHandler.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{09e86179-f0c7-4e63-9c4c-17d3691b5ccb}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\PRG_ChannelHandler.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{1fecdf9c-539b-4107-8f04-7fd2431b36ce}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\PRG_CNCVariablesViewer.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CNC Beckhoff\PRG_ManualMode.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{a49afcfd-2362-4153-9029-fef2053cbbbc}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\PRG_ManualModeHMI.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{3480dcd1-b4df-4004-b394-897655766feb}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\PRG_ShowMessages.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectProtection>00000000-0000-0000-0000-000000000000</ObjectProtection>
+    </Compile>
+    <Compile Include="CNC Beckhoff\Util\Blinker.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{fdc6f2a4-9c0b-4322-9634-38882faa3f8c}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\Util\FB_CNCWriteParameter.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectProtection>00000000-0000-0000-0000-000000000000</ObjectProtection>
+    </Compile>
+    <Compile Include="CNC Beckhoff\Util\FB_Uint_Udint.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{ea86ec42-82de-47d3-a502-3c3c1a29a03f}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\Util\F_GRAYCODE_TO_UINT.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CNC Beckhoff\Util\HLI3_FindHliAxisIdx.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{7aa33349-5577-41f0-8d51-fe242c595c7e}</ObjectGuid>
+    </Compile>
+    <Compile Include="CNC Beckhoff\Util\HLI3_FindAxisNameAndChannel.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{1382a93e-3281-45c2-8619-e55051f018ba}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\CNC_DataTyps\E_CNC_MM_Controller.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{fd4d40db-e538-443a-86f6-637050525836}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\CNC_DataTyps\E_HLI_MM_KEYDIRECTION.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{2289005b-2b7b-4840-b7c7-cb912cbeaa51}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\CNC_DataTyps\ST_BlockSearch.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{24ce5521-9d14-43da-94a2-532255f07efb}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\CNC_DataTyps\ST_ChannelSignals.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{180df827-2bd7-4b30-91c1-bd5c132fa525}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\CNC_DataTyps\ST_CNCAxis.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectProtection>00000000-0000-0000-0000-000000000000</ObjectProtection>
+    </Compile>
+    <Compile Include="Data types\CNC_DataTyps\ST_CncChannel.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{5005b8a4-8e79-451c-a8da-b0bf816d41bc}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\CNC_DataTyps\ST_CNCG159VG.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Data types\CNC_DataTyps\ST_CncSystem.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{1eda0625-68c1-4031-ad55-6b6c299d25b4}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\CNC_DataTyps\ST_CNC_TOOL_DATA_EXT.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{0ad81cb2-8be7-40e3-a324-53e38e1c99be}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\CNC_DataTyps\ST_ManualMode.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{081593a3-81b6-48c8-ad5f-8ccfbc3cc3bd}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\CNC_DataTyps\ST_OpModes.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{ce08ea52-1088-4cb3-81a1-8f95ccb3ece5}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\CNC_DataTyps\ST_OpStates.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{ef675648-7f0e-4284-934d-70244ff185ed}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\CNC_DataTyps\ST_SyntaxCheck.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{c475e773-956e-4fc7-80b1-9691d464a135}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\CNC_DataTyps\ST_TechnoAttributeData.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{517f5019-3479-4ef1-ad35-0368b59efd99}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\CNC_DataTyps\VEData.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{1288a3ca-ac00-4fa5-ae20-4dfb1fb089c9}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\CNC_FastMFunction\E_FastMFunctionState.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Data types\CNC_FastMFunction\ST_FastMFunctionBufferItem.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Data types\CNC_FastMFunction\ST_FastMFunctionData.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Data types\CNC_FastMFunction\ST_FastMFunctionItem.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Data types\CNC_ManualMode\E_CNC_ManualType.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectProtection>00000000-0000-0000-0000-000000000000</ObjectProtection>
+    </Compile>
+    <Compile Include="Data types\CNC_ManualMode\ST_ManualModeAxis.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectProtection>00000000-0000-0000-0000-000000000000</ObjectProtection>
+    </Compile>
+    <Compile Include="Data types\CNC_ManualMode\ST_ManualModeAxisKeys.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectProtection>00000000-0000-0000-0000-000000000000</ObjectProtection>
+    </Compile>
+    <Compile Include="Data types\CNC_ManualMode\ST_ManualModeAxisParameter.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectProtection>00000000-0000-0000-0000-000000000000</ObjectProtection>
+    </Compile>
+    <Compile Include="Data types\CNC_ManualMode\ST_ManualModeChannelParameter.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectProtection>00000000-0000-0000-0000-000000000000</ObjectProtection>
+    </Compile>
+    <Compile Include="Data types\CNC_ManualMode\ST_ManualModeControlElements.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectProtection>00000000-0000-0000-0000-000000000000</ObjectProtection>
+    </Compile>
+    <Compile Include="Data types\CNC_ManualMode\ST_ManualModeControlElementState.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectProtection>00000000-0000-0000-0000-000000000000</ObjectProtection>
+    </Compile>
+    <Compile Include="Data types\CNC_ManualMode\ST_ManualModeJoystickParameter.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectProtection>00000000-0000-0000-0000-000000000000</ObjectProtection>
+    </Compile>
+    <Compile Include="Data types\CNC_ManualMode\ST_ManualModeKeyHWUnit.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectProtection>00000000-0000-0000-0000-000000000000</ObjectProtection>
+    </Compile>
+    <Compile Include="Data types\CNC_ManualMode\ST_ManualModeParameter.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectProtection>00000000-0000-0000-0000-000000000000</ObjectProtection>
+    </Compile>
+    <Compile Include="Data types\CNC_ManualMode\ST_ManualModeState.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectProtection>00000000-0000-0000-0000-000000000000</ObjectProtection>
+    </Compile>
+    <Compile Include="Data types\CNC_VariablesViewer\E_CNCVariablesType.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Data types\CNC_VariablesViewer\E_VEVariablesType.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Data types\CNC_VariablesViewer\ST_CNCVariablesViewer_Data.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Data types\CNC_WriteParameter\E_CNCParameterTypes.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectProtection>00000000-0000-0000-0000-000000000000</ObjectProtection>
+    </Compile>
+    <Compile Include="Data types\CNC_WriteParameter\ST_CNCParameter.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectProtection>00000000-0000-0000-0000-000000000000</ObjectProtection>
+    </Compile>
+    <Compile Include="Data types\EtherCAT Diag\E_EcCommState.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{b34abcf1-8693-4cad-ab2a-3160af290cdb}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\EtherCAT Diag\ST_EcMasterDevState.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{424415d4-d66b-4e45-9905-74be28cac86d}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\EtherCAT Diag\ST_PortAddr.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{106ca540-3e57-4a8d-87c2-41c4bb271623}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\EtherCAT Diag\ST_SlaveState.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{b576ccdf-3c22-4a33-b427-adf6497f1144}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\EtherCAT Diag\ST_SlaveStateInfo.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{d9bd762b-be95-4ee4-9524-9fb8a66d2cd4}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\EtherCAT Diag\ST_SlaveStateInfoScanned.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{baedbd06-a578-4bda-89b0-f276924fa049}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\EtherCAT Diag\ST_TopologyData.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{9a0c9592-ce0b-444d-a612-49837bdf2c4a}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\EventLogger\E_LogMethod.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{b2afc65d-5b77-49f2-a298-9849555dd177}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\EventLogger\ST_EventData.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{8c8128fc-446e-4eeb-b3ac-fcf7b0704004}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\EventLogger\ST_FileInfo.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{2853416d-e703-4065-85af-71901c8e8e51}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\E_HLI_MM_STATE.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{db0409ed-a0b8-4088-8e08-aa67e5c7ae19}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\General SoE DTs\ST_SoE_String.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{1173566c-26cc-4788-8b80-70add751583a}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\General SoE DTs\ST_SoE_StringEx.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{906c9728-c359-4e42-a541-cf6a217c8b9d}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\Magazin\ST_Magazin.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{826073ed-9cda-45b0-9e74-89c299c95128}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\MaschinenDaten PlcStructure\ST_HMIPDatMaschine.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{6b7718ef-b183-40c8-b665-3bf043da7181}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\MaschinenDaten PlcStructure\ST_HMIPDatProg.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{a73360fe-0027-4f98-affe-57956cb3d87e}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\MaschinenDaten PlcStructure\ST_HMI_Manual.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{5c12810e-dbb1-4389-92ca-0a5d1af59ad3}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\MaschinenDaten PlcStructure\ST_MachData.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{177669cd-67bc-4599-a64a-81a705e3c51b}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\MaschinenDaten PlcStructure\ST_PDatLineProgLine.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{55e4d1ab-3e4f-40fb-b027-b381786601de}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\MaschinenDaten PlcStructure\ST_PDatLineProgValue.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{fe032008-8f73-4dd9-87c8-f183d9ed1531}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\Recipe\RecipeHeader_Struct.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{4a7df852-7afc-4a49-b3f1-410314d1682e}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\Recipe\RecipeList_Struct.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{7bc47c37-58e8-4f7d-8f90-0ca275f5eb05}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\SERCOS\E_SoE_AttribLen.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{a1869de2-361b-4533-ae2d-c4e087278958}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\SERCOS\E_SoE_CmdControl.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{e332b687-3b8d-4836-ad85-8a04d1f14846}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\SERCOS\E_SoE_CmdState.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{c534154c-120e-4481-a94a-9763334b3e0a}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\SERCOS\E_SoE_Type.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{7291cfaf-61ee-45f9-a21b-a91efcaef55d}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\ST_Diagnose.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{a44c614e-5a57-4e4c-aa78-5c8e1da6d619}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\ST_EtherCATAxisInfo.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{b8341d34-cdab-4633-97bd-34cd4255428d}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\ST_EventData1.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{53f9c1e4-6898-46dc-ba94-3314b23a1fde}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\ST_EventDataAX5000_1.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{94853b2d-19cc-4cbd-9a0d-30e86a3e5198}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\ST_MachineMode.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{bedbe333-fa74-44a4-9ca4-ab8d537f835e}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\ST_MViewStatus.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{0ea1ab3a-aea4-4c99-a8d5-8256b0c3e81e}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\ST_WKZDaten.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{21f1bb66-cd52-4f4e-ad37-6131f582b775}</ObjectGuid>
+    </Compile>
+    <Compile Include="Data types\ST_WPCounter.TcDUT">
+      <SubType>Code</SubType>
+      <ObjectGuid>{cc19862f-d5a3-45b3-b5c4-750ad507af14}</ObjectGuid>
+    </Compile>
+    <Compile Include="FAST.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Global Variables\Examples\Globale_EtherCATDiag.TcGVL">
+      <SubType>Code</SubType>
+      <ObjectGuid>{2998fef1-e645-4fd5-b5b6-42ac75b58c2f}</ObjectGuid>
+    </Compile>
+    <Compile Include="Global Variables\Examples\Global_BDE.TcGVL">
+      <SubType>Code</SubType>
+      <ObjectGuid>{e5034500-7716-4c2e-9e97-d86a40a97123}</ObjectGuid>
+    </Compile>
+    <Compile Include="Global Variables\Examples\Global_MachineView.TcGVL">
+      <SubType>Code</SubType>
+      <ObjectGuid>{e261bd47-41e1-4ca6-ac47-bed35a594bb7}</ObjectGuid>
+    </Compile>
+    <Compile Include="Global Variables\Examples\Global_ManualPlcFunctions.TcGVL">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Global Variables\Examples\Global_MaschinenDaten.TcGVL">
+      <SubType>Code</SubType>
+      <ObjectGuid>{58809fbd-678d-413e-a5af-524e02b1a0bd}</ObjectGuid>
+      <LinkAlways>True</LinkAlways>
+    </Compile>
+    <Compile Include="Global Variables\Examples\Global_VE.TcGVL">
+      <SubType>Code</SubType>
+      <ObjectGuid>{31395841-cad1-421c-8ef6-def240e61b77}</ObjectGuid>
+    </Compile>
+    <Compile Include="Global Variables\Global_CNC.TcGVL">
+      <SubType>Code</SubType>
+      <ObjectGuid>{7d2cc5f8-189d-4c4c-b283-a4224e38e899}</ObjectGuid>
+    </Compile>
+    <Compile Include="Global Variables\Global_CNCVariablesViewer.TcGVL">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Global Variables\Global_HMI.TcGVL">
+      <SubType>Code</SubType>
+      <ObjectGuid>{4f704176-310f-4d40-8e3c-1ef12402672b}</ObjectGuid>
+    </Compile>
+    <Compile Include="Global Variables\Global_ManualMode.TcGVL">
+      <SubType>Code</SubType>
+      <ObjectGuid>{8a412fc0-c29f-4d5d-adf5-f4ce53d58495}</ObjectGuid>
+    </Compile>
+    <Compile Include="Global Variables\Global_Messages.TcGVL">
+      <SubType>Code</SubType>
+      <ObjectGuid>{37dff550-8eb5-40c9-88e9-ab900d467742}</ObjectGuid>
+    </Compile>
+    <Compile Include="Global Variables\Variable_Configuration.TcGVL">
+      <SubType>Code</SubType>
+      <ObjectGuid>{49fe29e9-282a-4c4b-b3af-8056c7c12783}</ObjectGuid>
+    </Compile>
+    <Compile Include="MAIN.TcPOU">
+      <SubType>Code</SubType>
+      <ObjectGuid>{d0325e41-2b62-4523-8a22-095faf0a29ad}</ObjectGuid>
+    </Compile>
+    <Compile Include="PlcFastTask.TcTTO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Standard_Task.TcTTO">
+      <ObjectGuid>{3b065bef-9084-4819-b01b-f2b97ae69fb4}</ObjectGuid>
+    </Compile>
+    <Compile Include="Version\Global_Version.TcGVL">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <PlaceholderReference Include="Tc2_CncHli">
+      <DefaultResolution>Tc2_CncHli, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc2_CncHli</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc2_Drive">
+      <DefaultResolution>Tc2_Drive, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc2_Drive</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc2_EtherCAT">
+      <DefaultResolution>Tc2_EtherCAT, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc2_EtherCAT</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc2_IoFunctions">
+      <DefaultResolution>Tc2_IoFunctions, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc2_IoFunctions</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc2_Standard">
+      <DefaultResolution>Tc2_Standard, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc2_Standard</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc2_System">
+      <DefaultResolution>Tc2_System, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc2_System</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc2_Utilities">
+      <DefaultResolution>Tc2_Utilities, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc2_Utilities</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc3_Module">
+      <DefaultResolution>Tc3_Module, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc3_Module</Namespace>
+    </PlaceholderReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Tc3_1CNCPLCBase.tmc">
+      <SubType>Content</SubType>
+    </None>
+  </ItemGroup>
+  <ProjectExtensions>
+    <PlcProjectOptions>
+      <XmlArchive>
+  <Data>
+    <o xml:space="preserve" t="OptionKey">
+      <v n="Name">"&lt;ProjectRoot&gt;"</v>
+      <d n="SubKeys" t="Hashtable" ckt="String" cvt="OptionKey">
+        <v>{FE9F63D4-9E34-43ce-9322-D46747A00F33}</v>
+        <o>
+          <v n="Name">"{FE9F63D4-9E34-43ce-9322-D46747A00F33}"</v>
+          <d n="SubKeys" t="Hashtable" />
+          <d n="Values" t="Hashtable" />
+        </o>
+        <v>{8F99A816-E488-41E4-9FA3-846536012284}</v>
+        <o>
+          <v n="Name">"{8F99A816-E488-41E4-9FA3-846536012284}"</v>
+          <d n="SubKeys" t="Hashtable" />
+          <d n="Values" t="Hashtable" />
+        </o>
+        <v>{E709B08B-B6E4-4966-8EED-D793A13114C6}</v>
+        <o>
+          <v n="Name">"{E709B08B-B6E4-4966-8EED-D793A13114C6}"</v>
+          <d n="SubKeys" t="Hashtable" />
+          <d n="Values" t="Hashtable" ckt="String" cvt="Boolean">
+            <v>ReplaceConstants</v>
+            <v>True</v>
+          </d>
+        </o>
+        <v>{29BD8D0C-3586-4548-BB48-497B9A01693F}</v>
+        <o>
+          <v n="Name">"{29BD8D0C-3586-4548-BB48-497B9A01693F}"</v>
+          <d n="SubKeys" t="Hashtable" ckt="String" cvt="OptionKey">
+            <v>Rules</v>
+            <o>
+              <v n="Name">"Rules"</v>
+              <d n="SubKeys" t="Hashtable" />
+              <d n="Values" t="Hashtable" />
+            </o>
+          </d>
+          <d n="Values" t="Hashtable" />
+        </o>
+        <v>{A3BBA713-63D7-4de6-BEC2-E3BAAD8789F8}</v>
+        <o>
+          <v n="Name">"{A3BBA713-63D7-4de6-BEC2-E3BAAD8789F8}"</v>
+          <d n="SubKeys" t="Hashtable" />
+          <d n="Values" t="Hashtable" />
+        </o>
+        <v>{C70B7845-2722-4a9b-A0EA-88C877A4B36F}</v>
+        <o>
+          <v n="Name">"{C70B7845-2722-4a9b-A0EA-88C877A4B36F}"</v>
+          <d n="SubKeys" t="Hashtable" />
+          <d n="Values" t="Hashtable" ckt="String">
+            <v>EnableMaxAuthenticationTrials</v>
+            <v>true</v>
+            <v>MaxAuthenticationTrials</v>
+            <v>3</v>
+            <v>UserList</v>
+            <o t="UserList">
+              <a n="Users" cet="User">
+                <o>
+                  <v n="Id">{d5cd139e-31a7-4f0e-a113-0c2af4c2ad0c}</v>
+                  <v n="Name">"Owner"</v>
+                  <v n="FullName">""</v>
+                  <v n="Description">""</v>
+                  <v n="Active">true</v>
+                </o>
+              </a>
+            </o>
+            <v>MaxTimeOfInactivity</v>
+            <v>10</v>
+            <v>EnableMaxTimeOfInactivity</v>
+            <v>true</v>
+            <v>GroupList</v>
+            <o t="GroupList">
+              <a n="Groups" cet="Group">
+                <o>
+                  <v n="Id">{3ae09677-522b-475f-b36c-4f2ccde90aef}</v>
+                  <v n="Name">"Everyone"</v>
+                  <v n="Description">""</v>
+                  <v n="IsEveryoneGroup">true</v>
+                  <v n="IsOwnerGroup">false</v>
+                  <l n="UserMembers" t="ArrayList" cet="Guid">
+                    <v>d5cd139e-31a7-4f0e-a113-0c2af4c2ad0c</v>
+                  </l>
+                  <l n="GroupMembers" t="ArrayList" />
+                </o>
+                <o>
+                  <v n="Id">{ec2e1006-8aff-434e-a17d-d7d9c5079e72}</v>
+                  <v n="Name">"Owner"</v>
+                  <v n="Description">""</v>
+                  <v n="IsEveryoneGroup">false</v>
+                  <v n="IsOwnerGroup">true</v>
+                  <l n="UserMembers" t="ArrayList" cet="Guid">
+                    <v>d5cd139e-31a7-4f0e-a113-0c2af4c2ad0c</v>
+                  </l>
+                  <l n="GroupMembers" t="ArrayList" />
+                </o>
+              </a>
+            </o>
+            <v>UserAuthentication</v>
+            <o t="UserAuthentication">
+              <d n="UserToPasswordHash" t="Hashtable" ckt="Guid" cvt="String">
+                <v>d5cd139e-31a7-4f0e-a113-0c2af4c2ad0c</v>
+                <v>d41d8cd98f00b204e9800998ecf8427e</v>
+              </d>
+            </o>
+          </d>
+        </o>
+        <v>{192FAD59-8248-4824-A8DE-9177C94C195A}</v>
+        <o>
+          <v n="Name">"{192FAD59-8248-4824-A8DE-9177C94C195A}"</v>
+          <d n="SubKeys" t="Hashtable" />
+          <d n="Values" t="Hashtable" />
+        </o>
+        <v>{40450F57-0AA3-4216-96F3-5444ECB29763}</v>
+        <o>
+          <v n="Name">"{40450F57-0AA3-4216-96F3-5444ECB29763}"</v>
+          <d n="SubKeys" t="Hashtable" />
+          <d n="Values" t="Hashtable" ckt="String" cvt="String">
+            <v>ActiveVisuProfile</v>
+            <v>IR0whWr8bwfABwAAAXCU0gAAAABQAgAAAyHS1QAAAAABAAAAAAAAAAEaUwB5AHMAdABlAG0ALgBTAHQAcgBpAG4AZwACTHsAZgA5ADUAYgBiADQAMgA2AC0ANQA1ADIANAAtADQAYgA0ADUALQA5ADQAMAAwAC0AZgBiADAAZgAyAGUANwA3AGUANQAxAGIAfQADCE4AYQBtAGUABDJUAHcAaQBuAEMAQQBUACAAMwAuADEAIABCAHUAaQBsAGQAIAA0ADAAMgAwAC4AMQAwAAUWUAByAG8AZgBpAGwAZQBEAGEAdABhAAZMewAxADYAZQA1ADUAYgA2ADAALQA3ADAANAAzAC0ANABhADYAMwAtAGIANgA1AGIALQA2ADEANAA3ADEAMwA4ADcAOABkADQAMgB9AAcSTABpAGIAcgBhAHIAaQBlAHMACEx7ADMAYgBmAGQANQA0ADUAOQAtAGIAMAA3AGYALQA0AGQANgBlAC0AYQBlADEAYQAtAGEAOAAzADMANQA2AGEANQA1ADEANAAyAH0ACUx7ADkAYwA5ADUAOAA5ADYAOAAtADIAYwA4ADUALQA0ADEAYgBiAC0AOAA4ADcAMQAtADgAOQA1AGYAZgAxAGYAZQBkAGUAMQBhAH0ACg5WAGUAcgBzAGkAbwBuAAsGaQBuAHQADApVAHMAYQBnAGUADQpUAGkAdABsAGUADhpWAGkAcwB1AEUAbABlAG0ATQBlAHQAZQByAA8OQwBvAG0AcABhAG4AeQAQDFMAeQBzAHQAZQBtABESVgBpAHMAdQBFAGwAZQBtAHMAEjBWAGkAcwB1AEUAbABlAG0AcwBTAHAAZQBjAGkAYQBsAEMAbwBuAHQAcgBvAGwAcwATKFYAaQBzAHUARQBsAGUAbQBzAFcAaQBuAEMAbwBuAHQAcgBvAGwAcwAUJFYAaQBzAHUARQBsAGUAbQBUAGUAeAB0AEUAZABpAHQAbwByABUiVgBpAHMAdQBOAGEAdABpAHYAZQBDAG8AbgB0AHIAbwBsABYUdgBpAHMAdQBpAG4AcAB1AHQAcwAXDHMAeQBzAHQAZQBtABgYVgBpAHMAdQBFAGwAZQBtAEIAYQBzAGUAGSZEAGUAdgBQAGwAYQBjAGUAaABvAGwAZABlAHIAcwBVAHMAZQBkABoIYgBvAG8AbAAbIlAAbAB1AGcAaQBuAEMAbwBuAHMAdAByAGEAaQBuAHQAcwAcTHsANAAzAGQANQAyAGIAYwBlAC0AOQA0ADIAYwAtADQANABkADcALQA5AGUAOQA0AC0AMQBiAGYAZABmADMAMQAwAGUANgAzAGMAfQAdHEEAdABMAGUAYQBzAHQAVgBlAHIAcwBpAG8AbgAeFFAAbAB1AGcAaQBuAEcAdQBpAGQAHxZTAHkAcwB0AGUAbQAuAEcAdQBpAGQAIEhhAGYAYwBkADUANAA0ADYALQA0ADkAMQA0AC0ANABmAGUANwAtAGIAYgA3ADgALQA5AGIAZgBmAGUAYgA3ADAAZgBkADEANwAhFFUAcABkAGEAdABlAEkAbgBmAG8AIkx7AGIAMAAzADMANgA2AGEAOAAtAGIANQBjADAALQA0AGIAOQBhAC0AYQAwADAAZQAtAGUAYgA4ADYAMAAxADEAMQAwADQAYwAzAH0AIw5VAHAAZABhAHQAZQBzACRMewAxADgANgA4AGYAZgBjADkALQBlADQAZgBjAC0ANAA1ADMAMgAtAGEAYwAwADYALQAxAGUAMwA5AGIAYgA1ADUANwBiADYAOQB9ACVMewBhADUAYgBkADQAOABjADMALQAwAGQAMQA3AC0ANAAxAGIANQAtAGIAMQA2ADQALQA1AGYAYwA2AGEAZAAyAGIAOQA2AGIANwB9ACYWTwBiAGoAZQBjAHQAcwBUAHkAcABlACdUVQBwAGQAYQB0AGUATABhAG4AZwB1AGEAZwBlAE0AbwBkAGUAbABGAG8AcgBDAG8AbgB2AGUAcgB0AGkAYgBsAGUATABpAGIAcgBhAHIAaQBlAHMAKBBMAGkAYgBUAGkAdABsAGUAKRRMAGkAYgBDAG8AbQBwAGEAbgB5ACoeVQBwAGQAYQB0AGUAUAByAG8AdgBpAGQAZQByAHMAKzhTAHkAcwB0AGUAbQAuAEMAbwBsAGwAZQBjAHQAaQBvAG4AcwAuAEgAYQBzAGgAdABhAGIAbABlACwSdgBpAHMAdQBlAGwAZQBtAHMALUg2AGMAYgAxAGMAZABlADEALQBkADUAZABjAC0ANABhADMAYgAtADkAMAA1ADQALQAyADEAZgBhADcANQA2AGEAMwBmAGEANAAuKEkAbgB0AGUAcgBmAGEAYwBlAFYAZQByAHMAaQBvAG4ASQBuAGYAbwAvTHsAYwA2ADEAMQBlADQAMAAwAC0ANwBmAGIAOQAtADQAYwAzADUALQBiADkAYQBjAC0ANABlADMAMQA0AGIANQA5ADkANgA0ADMAfQAwGE0AYQBqAG8AcgBWAGUAcgBzAGkAbwBuADEYTQBpAG4AbwByAFYAZQByAHMAaQBvAG4AMgxMAGUAZwBhAGMAeQAzMEwAYQBuAGcAdQBhAGcAZQBNAG8AZABlAGwAVgBlAHIAcwBpAG8AbgBJAG4AZgBvADQaQwBvAG0AcABhAHQAaQBiAGkAbABpAHQAeQDQAAIaA9ADAS0E0AUGGgbQBwgaAUUHCQjQAAkaBEUKCwQDAAAABQAAAAgAAAAAAAAA0AwLrQIAAADQDQEtDtAPAS0Q0AAJGgRFCgsEAwAAAAUAAAAIAAAAKAAAANAMC60BAAAA0A0BLRHQDwEtENAACRoERQoLBAMAAAAFAAAACAAAAAAAAADQDAutAgAAANANAS0S0A8BLRDQAAkaBEUKCwQDAAAABQAAAAgAAAAoAAAA0AwLrQIAAADQDQEtE9APAS0Q0AAJGgRFCgsEAwAAAAUAAAAIAAAAAAAAANAMC60CAAAA0A0BLRTQDwEtENAACRoERQoLBAMAAAAFAAAACAAAAAAAAADQDAutAgAAANANAS0V0A8BLRDQAAkaBEUKCwQDAAAABQAAAAgAAAAAAAAA0AwLrQIAAADQDQEtFtAPAS0X0AAJGgRFCgsEAwAAAAUAAAAIAAAAKAAAANAMC60EAAAA0A0BLRjQDwEtENAZGq0BRRscAdAAHBoCRR0LBAMAAAAFAAAACAAAAAAAAADQHh8tINAhIhoCRSMkAtAAJRoFRQoLBAMAAAADAAAAAAAAAAoAAADQJgutAAAAANADAS0n0CgBLRHQKQEtENAAJRoFRQoLBAMAAAADAAAAAAAAAAoAAADQJgutAQAAANADAS0n0CgBLRHQKQEtEJoqKwFFAAEC0AABLSzQAAEtF9AAHy0t0C4vGgPQMAutAQAAANAxC60RAAAA0DIarQDQMy8aA9AwC60CAAAA0DELrQMAAADQMhqtANA0Gq0A</v>
+          </d>
+        </o>
+        <v>{246001F4-279D-43AC-B241-948EB31120E1}</v>
+        <o>
+          <v n="Name">"{246001F4-279D-43AC-B241-948EB31120E1}"</v>
+          <d n="SubKeys" t="Hashtable" />
+          <d n="Values" t="Hashtable" />
+        </o>
+      </d>
+      <d n="Values" t="Hashtable" />
+    </o>
+  </Data>
+  <TypeList>
+    <Type n="ArrayList">System.Collections.ArrayList</Type>
+    <Type n="Boolean">System.Boolean</Type>
+    <Type n="Group">{daecd4be-1e2b-4335-a125-4a1ac83ea49f}</Type>
+    <Type n="GroupList">{bf4dffda-f055-446d-9d7a-5f126720896b}</Type>
+    <Type n="Guid">System.Guid</Type>
+    <Type n="Hashtable">System.Collections.Hashtable</Type>
+    <Type n="Int32">System.Int32</Type>
+    <Type n="OptionKey">{54dd0eac-a6d8-46f2-8c27-2f43c7e49861}</Type>
+    <Type n="String">System.String</Type>
+    <Type n="User">{cd83029e-13b0-491e-9e4b-921adda0d86b}</Type>
+    <Type n="UserAuthentication">{3635a671-97f5-41bb-9e29-0ebb9795975c}</Type>
+    <Type n="UserList">{9fe6b547-6bc8-4f11-b589-b517860c5891}</Type>
+  </TypeList>
+</XmlArchive>
+    </PlcProjectOptions>
+  </ProjectExtensions>
+</Project>

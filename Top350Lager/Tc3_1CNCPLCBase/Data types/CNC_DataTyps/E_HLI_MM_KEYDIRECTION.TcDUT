@@ -1,0 +1,13 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="E_HLI_MM_KEYDIRECTION" Id="{2289005b-2b7b-4840-b7c7-cb912cbeaa51}">
+    <Declaration><![CDATA[TYPE E_HLI_MM_KEYDIRECTION :
+(
+	KEY_DIR_NEGATIVE := -1,
+	KEY_DIR_NOT_PRESSED := 0,
+	KEY_DIR_POSITIVE := 1
+);
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

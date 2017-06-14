@@ -1,0 +1,202 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI_MoveSpindle" Id="{a45192d9-dff6-4aec-8677-90f1b0e9714b}">
+    <Declaration><![CDATA[///*********************************************************************************************************
+///NAME.......................:	HLI_MoveSpindle	
+///DATUM....................:	7.9.2009
+///AUTOR....................:	Michael Balsfulland (MiB)
+///VERSION................:	1.0
+///				1.1 20.8.2010 MiB: kompletter Umbau auf Schrittkette mit Fehlerhandling
+///BESCHREIBUNG.:	 Spindel mit einer vorgegeben Geschwindigkeit starten oder Spindel stoppen
+///......................: 	
+///
+///**********************************************************************************************************
+FUNCTION_BLOCK HLI_MoveSpindle
+VAR
+	pUnit: POINTER TO MC_CONTROL_EXT_TO_IPO;
+	fbRTrigStart: R_TRIG;
+	fbRTrigStop: R_TRIG;
+	nState: INT;
+	/// Index of axis specific HLI area 
+	nHliAxIfcIdx: UDINT;
+END_VAR
+VAR_INPUT
+	/// Spindel Achssnummer 
+	nLogAxisNr: UDINT;
+	/// U/min 
+	nSpeed: DINT;
+	/// steigende Flanke 
+	bStart: BOOL;
+	/// steigende Flanke 
+	bStop: BOOL;
+END_VAR
+VAR_OUTPUT
+	bBusy: BOOL;
+	bError: BOOL;
+	nErrID: INT;
+	sErrText: STRING;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[fbRTrigStart(clk := bStart);
+IF fbRTrigStart.Q THEN
+	bError := FALSE;
+	nErrId := 0;
+	sErrText := '';
+	nState := 100;   (* Spindel starten *)
+END_IF
+
+
+fbRTrigStop(clk := bStop);
+IF fbRTrigStop.Q THEN
+	bError := FALSE;
+	nErrId := 0;
+	sErrText := '';
+	nState := 200;  (* Spindel stoppen *)
+END_IF
+
+nHliAxIfcIdx := nLogAxisNr - 1;
+
+IF fbRTrigStop.Q OR fbRTrigStart.Q THEN   (* Grundzustände testen *)
+	bBusy := TRUE;
+	IF nLogAxisNr = 0 THEN
+		nState := -1;
+		nErrID := 1;
+		sErrText := 'Spindel ID = 0';
+	END_IF
+	IF ADR(gpAx[nHliAxIfcIdx]^)  = 0  THEN
+		nState := -1;
+		nErrID := 2;
+		sErrText := 'Achsstruktur nicht vorhanden -> eventuell HLI Init nicht OK';
+	END_IF
+	IF gpAx[nHliAxIfcIdx]^.ipo_state.spindle_axis_r <> TRUE THEN
+		nState := -1;
+		nErrID := 3;
+		sErrText := 'Achse ist kene Spindel';
+	END_IF
+END_IF
+
+CASE nState OF
+
+
+-1: (* Fehler *)
+   	bError := TRUE;
+	bBusy := FALSE;
+
+0: (* IDLE *)
+	bBusy := FALSE;
+
+
+100: (* Spindel starten *)
+	(* Check Override *)
+	gpAx[nHliAxIfcIdx]^.ipo_mc_control.override.enable_w := TRUE;
+	IF gpAx[nHliAxIfcIdx]^.ipo_mc_control.override.state_r = 0 THEN
+		nState := -1;
+		nErrID := 4;
+		sErrText := 'Spindeloverride = 0';
+	ELSE
+		nState := 110;
+	END_IF
+
+
+110: (* Parametrieren des Aufrufs *)
+	pUnit := ADR(gpAx[nHliAxIfcIdx]^.ipo_mc_control.ext_to_ipo);
+	IF (nSpeed > 0) THEN
+		pUnit^.command_w.vb_prog   :=  nSpeed * 360 / 60 * 1000  ;(*Programmierter Satzvorschub in u/min*)
+		pUnit^.command_w.dreh_info := 1;(* rechtslauf *)
+	ELSE
+		pUnit^.command_w.vb_prog   :=  nSpeed * 360 / 60 * 1000  ;(*Programmierter Satzvorschub in u/min*)
+		pUnit^.command_w.dreh_info := 0;(* linkslauf*)
+	END_IF
+	pUnit^.command_w.geo_gm_fkt    := 0;(*G- und M- Fkt.-Bitleiste*)
+	pUnit^.command_w.satz_typ      := HLI_NC_MOVE_ENDLOS;(*Einer der Werte: HLI_NC_MOVE_LIN, HLI_NC_MOVREF, HLI_NC_MOVE_ENDLOS, HLI_NC_SPINDEL_STOP*)
+	IF pUnit^.command_semaphor_rw = FALSE THEN
+	    pUnit^.command_semaphor_rw := TRUE;
+	    nState := 120;
+	END_IF
+
+	IF (nSpeed=0) THEN
+		nState := -1;
+		nErrID := 6;
+		sErrText := 'Vorgabegeschwindigkeit = 0';
+	END_IF
+
+120: (* Start *)
+
+	IF pUnit^.command_semaphor_rw = FALSE THEN
+	    nState := 300;  (* checken Auftragsfehler *)
+	END_IF
+
+
+
+200: (* Spindel Stopp*)
+	pUnit := ADR(gpAx[nHliAxIfcIdx]^.ipo_mc_control.ext_to_ipo);
+	pUnit^.command_w.satz_typ  := HLI_NC_SPINDEL_STOP;(*Einer der Werte: HLI_NC_MOVE_LIN, HLI_NC_MOVREF, HLI_NC_MOVE_ENDLOS, HLI_NC_SPINDEL_STOP*)
+	pUnit^.command_w.dreh_info := 0;(*Drehinformation*)
+	IF pUnit^.command_semaphor_rw = FALSE THEN
+	    pUnit^.command_semaphor_rw := TRUE;
+	    nState := 210;
+	END_IF
+
+210: (* Warten auf Stop *)
+	IF pUnit^.command_semaphor_rw = FALSE THEN
+	    nState := 300;   (* checken Auftragsfehler *)
+	END_IF
+
+300: (* checken Auftragsfehler *)
+	IF (gpAx[nHliAxIfcIdx]^.ipo_state.spindle_order_error_r) THEN
+		nState := -1;
+		nErrID := 5;
+		sErrText := 'Beauftragunsfehler Spindel';
+	ELSE
+		nState := 310;
+	END_IF
+
+310: (* Warten auf Solldrehzahl erreicht *)
+
+	IF (gpAx[nHliAxIfcIdx]^.lr_state.rev_erreicht_r) THEN
+		nState := 0;
+	END_IF
+
+
+END_CASE
+
+
+(*
+IF nLogAxisNr <> 0 THEN
+	IF pAC[nLogAxisNr] <> 0  THEN
+		IF ADR(gpAx[nLogAxisNr]^) <> 0  THEN
+			IF gpAx[nLogAxisNr]^.ipo_state.X_SpindleAxis = TRUE THEN
+
+				(* command spindle revolution *)
+				IF fbRTrigStart.Q THEN
+					pCommand := ADR(gpAx[nLogAxisNr]^.ipo_mc_control.MCControlExtToIpo_ExtToIpo);
+					IF (nSpeed > 0) THEN
+						pCommand^.command_w.D_VbProg :=  DINT_TO_UDINT((nSpeed * 360 / 60) * 1000)  ;(*Programmierter Satzvorschub in u/min*)
+  						pCommand^.command_w.W_DrehInfo := 1;(* rechtslauf *)
+					ELSE
+						pCommand^.command_w.D_VbProg :=  DINT_TO_UDINT((-nSpeed * 360 / 60) * 1000)  ;(*Programmierter Satzvorschub in u/min*)
+						pCommand^.command_w.W_DrehInfo := 0;(* linkslauf*)
+					END_IF
+					pCommand^.command_w.D_GeoGmFkt := 0;(*G- und M- Fkt.-Bitleiste*)
+					pCommand^.command_w.W_SatzTyp := HLI_NC_MOVE_ENDLOS;(*Einer der Werte: HLI_NC_MOVE_LIN, HLI_NC_MOVREF, HLI_NC_MOVE_ENDLOS, HLI_NC_SPINDEL_STOP*)
+					pCommand^.command_semaphor_rw := TRUE;
+				END_IF
+				(* command spindle revolution *)
+				IF fbRTrigStop.Q THEN
+					pCommand := ADR(gpAx[nLogAxisNr]^.ipo_mc_control.MCControlExtToIpo_ExtToIpo);
+					pCommand^.command_w.D_VbProg := 600000000;(*Programmierter Satzvorschub*)
+					pCommand^.command_w.D_GeoGmFkt := 0;(*G- und M- Fkt.-Bitleiste*)
+
+					pCommand^.command_w.W_SatzTyp := HLI_NC_SPINDEL_STOP;(*Einer der Werte: HLI_NC_MOVE_LIN, HLI_NC_MOVREF, HLI_NC_MOVE_ENDLOS, HLI_NC_SPINDEL_STOP*)
+					pCommand^.command_w.W_DrehInfo := 0;(*Drehinformation*)
+					pCommand^.command_semaphor_rw := TRUE;
+				END_IF
+			END_IF
+		END_IF
+	END_IF
+END_IF
+*)]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

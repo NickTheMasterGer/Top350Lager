@@ -1,0 +1,27 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="ADSLOG" Id="{76715769-c214-4fa8-b784-10e8cc7574da}">
+    <Declaration><![CDATA[FUNCTION ADSLOG : BOOL
+VAR_INPUT
+	strMsg: STRING;
+	nDINT: DINT;
+	strArg: STRING;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[RETURN;
+
+IF strArg = '' THEN
+	ADSLOGDINT( msgCtrlMask :=    ADSLOG_MSGTYPE_MSGBOX
+	                           OR ADSLOG_MSGTYPE_LOG,
+				msgFmtStr   := strMsg,
+				dintArg     := nDINT);
+ELSE
+	ADSLOGSTR( msgCtrlMask :=    ADSLOG_MSGTYPE_MSGBOX
+	                          OR ADSLOG_MSGTYPE_LOG,
+				msgFmtStr := strMsg,
+				strArg := strArg);
+END_IF]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

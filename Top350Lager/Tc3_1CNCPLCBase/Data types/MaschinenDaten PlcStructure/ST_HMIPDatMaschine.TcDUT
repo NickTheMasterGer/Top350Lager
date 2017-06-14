@@ -1,0 +1,20 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.23">
+  <DUT Name="ST_HMIPDatMaschine" Id="{6b7718ef-b183-40c8-b665-3bf043da7181}">
+    <Declaration><![CDATA[TYPE ST_HMIPDatMaschine :
+STRUCT
+	///@1: Überstand @11:2
+	arrOverhang: ARRAY[1..2] OF LREAL;
+	/// @1: Vorschubgeschwindigkeit @11:2
+	fFeedVelo: LREAL;
+	///@1:Filename @5:1 @11:2
+	sFileName: STRING(255);
+	/// @1: Kantenfarbe @11:2
+	arrEdgecolor: ARRAY[1..2] OF DINT;
+	/// @1: Unterprogramm @11:2
+	arrProg: ARRAY[1..4] OF ST_HMIPDatProg;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4018.2">
+  <POU Name="HLI3_SetVEChannelBooleanValue" Id="{b68bfcb0-8195-4c5a-8c1f-8ac579b9b7fa}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION HLI3_SetVEChannelBooleanValue : BOOL
+VAR_INPUT
+	/// HLI Channel Index
+	nChanIdx: INT;
+	/// Index of variable  range 1 ...     HLI_VE_VALUEMAX 
+	nVEIndex: DINT;
+	/// Array index. 0 if no array 
+	nArrayIndex: DINT := 0;
+	/// serves acess to the global variable array 
+	bGlobal: BOOL;
+	/// Value to be written 
+	val: BOOL;
+END_VAR
+VAR
+	pVeData: POINTER TO VEData := 0;
+	/// Size of the datatype of the returned value 
+	iDatatypeSize: DINT;
+	ptr: POINTER TO BOOL;
+	ChIdx: UDINT;
+	SizeField: DINT := 0;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: SetVEChannelDIntValue                           *)
+(* --------------------------------------------------------- *)
+(*   Desc: Writes a V.E.Variable of REAL64                    *)
+(* 	 Author: CL  / TV                                        *)
+(*   Date: 16.05.2006                                        *)
+(*   Last: 05.12.2013                                        *)
+(*   Rev.: 1.3                                               *)
+(* ========================================================= *)
+
+IF  nVEIndex >= 0 AND
+	nArrayIndex >= 0 THEN
+
+	(* test if channel specific or global *)
+	IF bGlobal = FALSE  THEN
+		IF NOT HLI3_CheckChannelValid(nChannel := nChanIdx) THEN
+			RETURN;
+		END_IF
+				
+		pVeData := gpVECh[nChanIdx];
+	ELSE
+		pVeData := gpVEGlobal;
+	END_IF
+
+	IF pVeData <> 0 THEN
+		IF pVeData <> 0 THEN
+			iDatatypeSize := SIZEOF(ptr^);
+            ptr := pVeData +  24  * nVEIndex + (iDatatypeSize * nArrayIndex);
+			ptr^:=val;
+            HLI3_SetVEChannelBOOLeanValue := TRUE; (* successfully completed return *)						  						   
+       	END_IF
+	END_IF
+END_IF]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

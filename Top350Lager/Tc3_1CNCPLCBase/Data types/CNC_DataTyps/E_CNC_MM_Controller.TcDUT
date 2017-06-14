@@ -1,0 +1,14 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="E_CNC_MM_Controller" Id="{fd4d40db-e538-443a-86f6-637050525836}">
+    <Declaration><![CDATA[TYPE E_CNC_MM_Controller :
+(
+	HMI := 0,
+	PANEL := 1,
+	REMOTE := 2,
+	CUSTOMER := 3
+);
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

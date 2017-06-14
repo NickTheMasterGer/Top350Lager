@@ -1,0 +1,19 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="ST_WPCounter" Id="{cc19862f-d5a3-45b3-b5c4-750ad507af14}">
+    <Declaration><![CDATA[TYPE ST_WPCounter :
+STRUCT
+	CompleteCounterAll: DINT;
+	CompleteCounterIO: DINT;
+	CompleteCounterNIO: DINT;
+	DailyCounterAll: DINT;
+	DailyCounterIO: DINT;
+	DailyCounterNIO: DINT;
+	ShiftCounterAll: DINT;
+	ShiftCounterIO: DINT;
+	ShiftCounterNIO: DINT;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

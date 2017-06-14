@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4019.0">
+  <DUT Name="ST_ManualModeControlElements" Id="{7256c361-c48a-4f1a-8105-18048900a46c}">
+    <Declaration><![CDATA[TYPE ST_ManualModeControlElements :
+STRUCT
+	stControlKeys: ARRAY[0..HLI_KEY_MAXIDX] OF ST_ManualModeAxisKeys;
+	stControlJoystickValue: ARRAY[0..HLI_KEY_MAXIDX] OF DINT;
+	/// Es können 6 Handräder verwendet werden 
+	nHandwheelInc: ARRAY[0..HLI_HW_MAXIDX] OF DINT;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

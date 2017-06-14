@@ -1,0 +1,44 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="ReadBsAutoReturn" Id="{5a53fd80-6c86-4ef8-abe2-3ab40a0b9698}">
+    <Declaration><![CDATA[FUNCTION_BLOCK ReadBsAutoReturn
+VAR_INPUT
+	nIdxGrp: UDINT;
+	bStart: BOOL;
+	pDest: POINTER TO BOOL;
+END_VAR
+VAR_OUTPUT
+	Busy: BOOL;
+	bErr: BOOL;
+END_VAR
+VAR
+	fbRead: ADSREAD;
+	bStarted: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF bStarted = FALSE THEN
+   IF bStart = TRUE THEN
+      bStarted := TRUE;
+      bErr := FALSE;
+      Busy := TRUE;
+   END_IF
+END_IF
+
+IF bStarted THEN
+   (* raising edge of Timer triggers read request *)
+   fbRead( NetID := '', Port := 553, IdxGrp := nIdxGrp, IdxOffs := 16#00000063,
+         LEN := 1, DestAddr := pDest, READ := bStarted, TMOUT := T#1s);
+   IF NOT fbRead.Busy THEN
+      (* There was an error in the execution of the read request *)
+      IF fbRead.Err THEN
+         bErr := TRUE;
+      END_IF
+      fbRead(READ := FALSE);    (* reset because of edge detection in FB ADSREAD *)
+      bStarted := FALSE;
+      Busy := FALSE;
+   END_IF
+END_IF]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

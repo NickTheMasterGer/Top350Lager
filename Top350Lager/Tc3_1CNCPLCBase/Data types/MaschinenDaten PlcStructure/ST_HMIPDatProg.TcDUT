@@ -1,0 +1,18 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.23">
+  <DUT Name="ST_HMIPDatProg" Id="{a73360fe-0027-4f98-affe-57956cb3d87e}">
+    <Declaration><![CDATA[TYPE ST_HMIPDatProg :
+STRUCT
+	/// @1: Bearbeitung @11:2
+	nWorking: INT;
+	/// @1: Streckenwerte @11:2
+	stLine: ST_PDatLineProgLine;
+	/// @1: Werte mit Verstellung @11:2
+	stAdjustment: ST_PDatLineProgValue;
+	/// @1: Werte ohne Verstellung @11:2
+	stNoAdjustment: ST_PDatLineProgValue;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4018.5">
+  <DUT Name="ST_CncSystem" Id="{1eda0625-68c1-4031-ad55-6b6c299d25b4}">
+    <Declaration><![CDATA[TYPE ST_CncSystem :
+STRUCT
+	/// Initialization of HLI done 
+	bHLIInit: BOOL;
+	/// Initialization of user data done 
+	bUserInitDone: BOOL;
+	/// Error init HLI-Interfaces 
+	bInitError: BOOL;
+	/// ErrorId during init HLI-Interfaces 
+	nInitErrorId: UDINT;
+	Channel: ARRAY[0..HLI_SYS_CH_MAXIDX] OF ST_CncChannel;
+    LogAxisNo : ARRAY[0..MAX_SYS_LOG_AXIS_INDEX] OF ST_CncAxis;	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

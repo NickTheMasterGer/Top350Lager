@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4019.2">
+  <POU Name="HLI3_GetChannelActiveG" Id="{b244fca6-90b9-4611-a49e-7509ba35aec3}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK HLI3_GetChannelActiveG
+VAR_INPUT
+	bExec:	   BOOL;			// riding edge to start read
+	nChanIdx: INT;    			// zero based channel index	
+END_VAR
+VAR_OUTPUT
+	ActiveG : ARRAY[0..39] OF INT;
+	bBusy: BOOL;
+	bError: BOOL;
+	nErrorID: UDINT;
+END_VAR
+VAR
+	fbAdsRead: ADSREAD;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: HLI3_GetChannelActiveG                   		 *)
+(* --------------------------------------------------------- *)
+(*   Desc: Gets the channel specific active G functions      *)
+(*															 *)
+(* Return: Array[0..39] filled with the G information (<> -1)*)
+(* Author: MiB                                               *)
+(*   Date: 12.01.2016                                        *)
+(*   Rev.: 1.0                                               *)
+(* ========================================================= *)
+
+fbAdsRead(
+	NETID:= '' , 
+	PORT:= 553, 
+	IDXGRP:= 16#20100 + INT_TO_UDINT(nChanIdx) + 1, 
+	IDXOFFS:= 16#3C , 
+	LEN:= SIZEOF(ActiveG) , 
+	DESTADDR:= ADR(ActiveG),
+	READ:= bExec, 
+	TMOUT:= , 
+	BUSY=> bBusy, 
+	ERR=> bError, 
+	ERRID=> nErrorId );]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

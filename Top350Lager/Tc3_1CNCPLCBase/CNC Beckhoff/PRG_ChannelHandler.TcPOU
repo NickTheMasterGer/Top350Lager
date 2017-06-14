@@ -1,0 +1,114 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4018.5">
+  <POU Name="PRG_ChannelHandler" Id="{1fecdf9c-539b-4107-8f04-7fd2431b36ce}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM PRG_ChannelHandler
+VAR	
+	nChan					: INT;
+	nOldSelectedChannel		: UDINT;
+	CNCChannel				: ARRAY[0..MAX_USED_CHANNEL_IDX] OF HLI3_CNCChannel;	
+	BlockSearch_Channel		: ARRAY[0..MAX_USED_CHANNEL_IDX] OF HLI3_BlockSearch;
+	ModeManual_Channel		: ARRAY[0..MAX_USED_CHANNEL_IDX] OF HLI3_ManualModeHandler;
+	ErrorHandler_Channel	: ARRAY[0..MAX_USED_CHANNEL_IDX] OF FB_ChannelError;
+	nChanNo: UDINT;	
+	i: INT;
+	
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(****************************************************************************************)
+(* POU:		PRG_ChannelHandler                     										*)
+(* Type:	PRG																			*)
+(* Author: 	HR / TV / MiB                                          						*)
+(* Date: 	23.01.11																	*)
+(* Last:	02.03.16																	*)
+(* Rev.: 	1.4                                              							*)
+(* ------------------------------------------------------------------------------------ *)
+(* Desc:	Description																	*)
+(****************************************************************************************)
+
+(****************************************************************************************)
+(*	  Map CNC function selection from HMI to selected channel (and state vice versa)  	*)
+(****************************************************************************************)
+IF (nOldSelectedChannel <>INT_TO_UDINT(PLCSelectedChannel)) THEN
+	PLCChannelSignals.SingleBlock 		:= PLCMachineMode[PLCSelectedChannel].ChannelSignals.SingleBlock;
+	PLCChannelSignals.PrgBlockIgnore	:= PLCMachineMode[PLCSelectedChannel].ChannelSignals.PrgBlockIgnore;
+	PLCChannelSignals.M01Stop 			:= PLCMachineMode[PLCSelectedChannel].ChannelSignals.M01Stop;
+	PLCChannelSignals.Backward 			:= PLCMachineMode[PLCSelectedChannel].ChannelSignals.Backward;
+	PLCChannelSignals.FeedHold 			:= PLCMachineMode[PLCSelectedChannel].ChannelSignals.FeedHold;
+	nOldSelectedChannel 				:= INT_TO_UDINT(PLCSelectedChannel);
+END_IF
+
+PLCMachineMode[PLCSelectedChannel].ChannelSignals.SingleBlock 		:= PLCChannelSignals.SingleBlock;
+PLCMachineMode[PLCSelectedChannel].ChannelSignals.PrgBlockIgnore 	:= PLCChannelSignals.PrgBlockIgnore;
+PLCMachineMode[PLCSelectedChannel].ChannelSignals.M01Stop 			:= PLCChannelSignals.M01Stop;
+PLCMachineMode[PLCSelectedChannel].ChannelSignals.Backward 		:= PLCChannelSignals.Backward;
+PLCMachineMode[PLCSelectedChannel].ChannelSignals.FeedHold 		:= PLCChannelSignals.FeedHold;
+
+
+
+FOR i := 0 TO MAX_USED_CHANNEL_IDX DO
+		
+	nChan := i;	
+	IF (HLI3_CheckChannelValid(nChan)) THEN		
+		
+		(* Error handler for channel 1 *)
+		ErrorHandler_Channel[nChan](nChanIdx			:= nCHan);
+		
+		(* Pass feedrate override from HMI to first channel (in [0.1%]) *)
+		HLI3_SetChannelOverride
+			(nChanIdx			:= nChan,
+			 nOverride			:= PLCFeedOverride * 10
+			);
+		
+		(* Channel interface *)
+		CNCChannel[nChan]
+			(nChanIdx			:= nChan,
+			 (* Operation Mode *)
+			 bModeStandby		:= PLCMachineMode[nChan+1].Standby,
+			 bModeAutomatic		:= PLCMachineMode[nChan+1].Automatic,
+			 bModeManual		:= PLCMachineMode[nChan+1].Manual,
+			 bModeMDI			:= PLCMachineMode[nChan+1].MDI,	 
+			 bModeReference		:= PLCMachineMode[nChan+1].Homing,
+			 (* Operation State *)
+			 bStateSelect		:= PLCMachineMode[nChan+1].Select,
+			 bStateReady		:= PLCMachineMode[nChan+1].Ready,
+			 bStateStart		:= PLCMachineMode[nChan+1].Start,
+			 bStateStop			:= PLCMachineMode[nChan+1].Stop,
+			 bStateReset		:= PLCMachineMode[nChan+1].Reset,
+			 (* Special Functions *)
+			 sProgramName		:= PLCMachineMode[nChan+1].ProgramName,
+			 sMDIString			:= PLCMachineMode[nChan+1].MDIString,
+			 bBackwardMotion	:= PLCMachineMode[nChan+1].ChannelSignals.Backward,
+			 bPrgBlockIgnore	:= PLCMachineMode[nChan+1].ChannelSignals.PrgBlockIgnore,
+			 bFeedHold			:= PLCMachineMode[nChan+1].ChannelSignals.FeedHold,
+			 bSingleBlock		:= PLCMachineMode[nChan+1].ChannelSignals.SingleBlock,
+			 bDoSingleBlock		:= PLCMachineMode[nChan+1].ChannelSignals.DoSingleBlock,
+			 bM01Stop			:= PLCMachineMode[nChan+1].ChannelSignals.M01Stop,
+			 nSyntaxCheck		:= PLCMachineMode[nChan+1].SyntaxCheck.nType,
+			 sManualInitString  :=  stManualModeParameter[nChan].stChannelParameter.strInitParameter
+			);
+		
+		(* Handle block search *)
+		BlockSearch_Channel[nChan]
+			(nChanIdx			:= nChan,
+			 bStartRead      	:= PLCMachineMode[nChan+1].BlockSearch.bStartRead,   (* Edge signal *)
+			 bStartWrite     	:= PLCMachineMode[nChan+1].BlockSearch.bStartWrite,  (* Edge signal *)
+			 BlockSearch		:= PLCMachineMode[nChan+1].BlockSearch
+			);
+		
+		CNCSystem.Channel[nChan].ActDistance 	:= DINT_TO_LREAL(BlockSearch_Channel[nChan].coveredDistance_AfterReset) / 10.0;
+		CNCSystem.Channel[nChan].ActBlockCount 	:= BlockSearch_Channel[nChan].actualBlockCount_AfterReset;
+		
+		
+		ModeManual_Channel[nChan]
+			(stManualModeParameter  	 	:= stManualModeParameter[nChan],
+			 stManualModeControlElements	:= stManualModeControlElements[nChan],
+			 stManualModeControlElementState := stManualModeControlElementState,
+			 bReset 						:= FALSE,
+			 arrAxisInG201 				=> stManualModeState[nChan].arrAxisInG201
+			);
+	END_IF
+END_FOR
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

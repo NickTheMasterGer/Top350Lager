@@ -1,0 +1,53 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI3_AxisReset" Id="{bc21ca53-5050-4df4-9152-22de208a78bb}">
+    <Declaration><![CDATA[FUNCTION HLI3_AxisReset : BOOL
+VAR_INPUT
+	/// Channel number 
+	nChanNo: INT;
+	/// Axis number 
+	nHliAxisIdx: INT;
+END_VAR
+VAR
+	/// local pointer to data of actual axis 
+	pAxisData: POINTER TO HIGH_LEVEL_INTERFACE_AX;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: HLI3_QuitAxisReset                                 *)
+(* --------------------------------------------------------- *)
+(*   Desc:                                                   *)
+(* Author: MK , MiB                                          *)
+(*   Date: 20.11.2012                                        *)
+(*   Rev.: 1.1                                               *)
+(* ========================================================= *)
+
+
+HLI3_AxisReset := FALSE;
+IF NOT HLI3_CheckAxisValid(nHliAxisIdx := nHliAxisIdx) THEN
+	RETURN;
+END_IF
+
+IF gpAx[nHliAxisIdx] = 0 THEN
+	RETURN;
+END_IF
+
+
+(* get pointer to axis data *)
+pAxisData := gpAx[nHliAxisIdx];
+IF pAxisData^.ipo_state.cnc_channel_r = INT_TO_UINT(nChanNo) THEN (* it's an axis of the channel *)
+	(* is a reset commanded *)
+	IF pAxisData^.ipo_lc_control.plc_reset.command_r = TRUE THEN
+		(* quit this reset *)
+		pAxisData^.ipo_lc_control.plc_reset.state_w := TRUE;
+
+		ADSLOG(strMsg:='Reset of axis: %d', nDINT:=INT_TO_DINT(nHliAxisIdx), strArg:='');
+
+		HLI3_AxisReset := TRUE;
+	END_IF
+END_IF
+]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

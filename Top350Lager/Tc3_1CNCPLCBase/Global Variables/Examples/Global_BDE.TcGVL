@@ -1,0 +1,15 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <GVL Name="Global_BDE" Id="{e5034500-7716-4c2e-9e97-d86a40a97123}">
+    <Declaration><![CDATA[VAR_GLOBAL
+	///--------------------------
+	///	BDE, PLC -> HMI          
+	///--------------------------
+	BDESteuerungEin: BOOL;
+	BDEAutomatik: BOOL;
+	BDEVarBoolTimer: ARRAY[0..10] OF BOOL;
+	BDEVarBoolCounter: ARRAY[0..10] OF BOOL;
+	BDEVarBoolMessage: ARRAY[0..50] OF BOOL;
+END_VAR]]></Declaration>
+    <ObjectProperties />
+  </GVL>
+</TcPlcObject>

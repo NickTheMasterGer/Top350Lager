@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4018.2">
+  <DUT Name="ST_ManualModeParameter" Id="{5e6c4d04-a00f-4d6a-a569-fe7d877972ea}">
+    <Declaration><![CDATA[TYPE ST_ManualModeParameter :
+STRUCT
+	stAxisParameter: ST_ManualModeAxisParameter;
+	stJoystickParameter: ST_ManualModeJoystickParameter;
+	stChannelParameter: ST_ManualModeChannelParameter;	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

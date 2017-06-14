@@ -1,0 +1,240 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.36">
+  <POU Name="HLI3_FastMFunctionHandler" Id="{30263666-db64-44b1-912d-70c8b53671de}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK HLI3_FastMFunctionHandler
+VAR_INPUT
+	bForceOff			: BOOL;													(* Forces all bytes in the output array to be 00 and therefore to switch off the digital output *) 
+	bReset				: BOOL;													(* Resets the digital output *)
+	nFunctionNoOn		: UINT;													(* Specifies the M function number for switching the digital output on *) 
+	nDelayOn			: DINT;													(* Specifies a delay time in [µs] for switching on the digital output *)
+	nFunctionNoOff		: UINT;													(* Specifies the M function number for switching the digital output off *)
+	nDelayOff			: DINT;													(* Specifies a delay time in [µs] for switching off the digital output *)
+	stData				: ST_FastMFunctionData;									(* Structure provided by an instance of HLI3_FastMFunctionProvider *)
+END_VAR
+VAR_OUTPUT
+	abyOutput			: ARRAY[0..MAX_FAST_M_FUNC_OUTPUT_IDX] OF BYTE;		(* Output array for a digital oversampling output terminal EL2262 *)  
+END_VAR
+VAR
+	bSwitchOn			: BOOL;
+	nSwitchOnOffset		: DINT;
+	bSwitchOff			: BOOL;
+	nSwitchOffOffset	: DINT;
+	bStateChanged		: BOOL;
+	bFirstCycle			: BOOL := TRUE;
+	byStaticValue		: BYTE;
+	byBitmask			: BYTE;
+	nBits				: DINT;
+	nBytes				: DINT;
+	nLoop				: UINT;
+	nQueuedCount		: UINT;
+	
+	eLastState			: E_FastMFunctionState := E_FastMFunctionState.OFF;
+	stDequeued			: ST_FastMFunctionBufferItem;
+	astQueue			: ARRAY[0..MAX_FAST_M_FUNC_QUEUE_IDX] OF ST_FastMFunctionBufferItem;
+	
+	fbRtrigReset		: Tc2_Standard.R_TRIG;
+	CYCLE_TIME			: UINT := 1000;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(****************************************************************************************)
+(* POU:		HLI3_FastMFunctionHandler                     								*)
+(* Type:	FB																			*)
+(* Author: 	RCH		                                             						*)
+(* Date: 	14/10/29																	*)
+(* Rev.: 	1.0                                               							*)
+(* ------------------------------------------------------------------------------------ *)
+(* Desc.:	Function block for handling the oversampled output on an EL2262. The 		*)
+(*			output state will be derived from the occurance of two CNC M functions, 	*)
+(*			which have to be configured with output method MOS_TS and which have to be	*)
+(*			preprocessed by an instance of the HLI3_FastMFunctionProvider function 		*)
+(*			block. The switch ON/OFF times can be delayed seperately.					*)					
+(*																						*)
+(*			THIS FB HAS TO BE CALLED CYCLICALLY IN A 1MS TASK AND THE EL2262 HAS TO 	*)
+(*			FEATURE AN OVERSAMPLING FACTOR OF 1000 (125 BYTE) ==> 1µs == 1 bit!!!		*)
+(* ------------------------------------------------------------------------------------ *)
+(* Rev.:	1.1																			*)
+(* Date:	15/05/05								                                   	*)
+(* Author:	RCH																		 	*)
+(* Desc.:	Fixed issues occured if more than 1 MOS_TS M function was programmed in a   *)
+(*			single G-Code block.														*)
+(* ------------------------------------------------------------------------------------ *)
+(* Rev.:	<Enter revision number here>												*)
+(* Date:	<Enter revision data here>				                                   	*)
+(* Author:	<Enter author´s shortcut here>											 	*)
+(* Desc.:	<Enter description here>													*)
+(****************************************************************************************)
+
+(****************************************************************************************)
+(*	  						  Refresh buffered switch times 							*)
+(****************************************************************************************)
+THIS^.RefreshQueue(CYCLE_TIME);
+
+(****************************************************************************************)
+(*	  							 	  Reset output										*)
+(****************************************************************************************)
+fbRtrigReset(CLK:= bReset);
+
+IF fbRtrigReset.Q THEN
+	THIS^.ClearQueue();
+	bStateChanged				:= TRUE;
+	eLastState					:= E_FastMFunctionState.OFF;
+END_IF
+
+(****************************************************************************************)
+(*	  					    Search for new switch on/off events 						*)
+(****************************************************************************************)
+bSwitchOn						:= FALSE;
+nSwitchOnOffset					:= 0;
+bSwitchOff						:= FALSE;
+nSwitchOffOffset				:= 0;
+nLoop							:= 0;
+
+IF (stData.nFunctionCount > 0) AND (stData.bDataValid) THEN
+	REPEAT
+		IF (stData.astItem[nLoop].nFunctionNo = nFunctionNoOn) THEN
+			bSwitchOn			:= TRUE;
+			nSwitchOnOffset		:= stData.astItem[nLoop].nOffset;
+		ELSIF (stData.astItem[nLoop].nFunctionNo = nFunctionNoOff) THEN
+			bSwitchOff			:= TRUE;
+			nSwitchOffOffset	:= stData.astItem[nLoop].nOffset;
+		END_IF
+	
+		nLoop					:= nLoop + 1;
+		
+		UNTIL ((bSwitchOn AND bSwitchOff) OR (nLoop >= stData.nFunctionCount))
+	END_REPEAT	
+END_IF
+
+(****************************************************************************************)
+(*	  		Buffer found switch on/off events with correspondent switch times			*)
+(****************************************************************************************)
+IF bSwitchOn AND bSwitchOff THEN
+	(* In case switch on and off events have been transmitted within the same cycle, 	*)
+	(* order them according to their switch times!										*)
+	IF ((nSwitchOnOffset + nDelayOn) < (nSwitchOffOffset + nDelayOff)) THEN
+		THIS^.Enqueue(E_FastMFunctionState.ON, nSwitchOnOffset + nDelayOn);
+		THIS^.Enqueue(E_FastMFunctionState.OFF, nSwitchOffOffset + nDelayOff); 
+	ELSE
+		THIS^.Enqueue(E_FastMFunctionState.OFF, nSwitchOffOffset + nDelayOff);
+		THIS^.Enqueue(E_FastMFunctionState.ON, nSwitchOnOffset + nDelayOn);
+	END_IF
+ELSIF bSwitchOn THEN
+	THIS^.Enqueue(E_FastMFunctionState.ON, nSwitchOnOffset + nDelayOn);
+ELSIF bSwitchOff THEN
+	THIS^.Enqueue(E_FastMFunctionState.OFF, nSwitchOffOffset + nDelayOff);
+END_IF
+
+(****************************************************************************************)
+(*	  				  Set output array according to latest switch state					*)
+(****************************************************************************************)
+IF bStateChanged OR bFirstCycle THEN
+	bStateChanged				:= FALSE;
+
+	IF (eLastState = E_FastMFunctionState.OFF) THEN
+		byStaticValue			:= 16#00;
+	ELSIF (eLastState = E_FastMFunctionState.ON) THEN
+		byStaticValue			:= 16#FF;
+	END_IF
+	
+	Tc2_System.MEMSET(ADR(abyOutput[0]), byStaticValue, SIZEOF(abyOutput));
+END_IF
+
+(****************************************************************************************)
+(*	  					  Dequeue switch events from the buffer							*)
+(****************************************************************************************)
+WHILE THIS^.DequeuingRequired DO
+	stDequeued					:= THIS^.Dequeue();
+	nBits 						:= stDequeued.nSwitchTime MOD 8;
+	nBytes 						:= stDequeued.nSwitchTime / 8;
+	bStateChanged				:= TRUE;
+	IF (stDequeued.nSwitchTime < 0) OR (stDequeued.nSwitchTime > 1000) THEN
+		;
+	ELSE
+		IF ((stDequeued.eState = E_FastMFunctionState.ON) AND (eLastState = E_FastMFunctionState.OFF)) THEN
+			byBitmask			:= SHL(BYTE#255, nBits);
+			abyOutput[nBytes]	:= abyOutput[nBytes] OR byBitmask;
+			eLastState			:= E_FastMFunctionState.ON;
+			Tc2_System.MEMSET(ADR(abyOutput[nBytes + 1]), 16#FF, MAX_FAST_M_FUNC_OUTPUT_IDX - nBytes);
+		ELSIF ((stDequeued.eState = E_FastMFunctionState.OFF) AND (eLastState = E_FastMFunctionState.ON)) THEN
+			byBitmask			:= SHR(BYTE#255, 8 - nBits);
+			abyOutput[nBytes]	:= abyOutput[nBytes] AND byBitmask;
+			eLastState			:= E_FastMFunctionState.OFF;
+			Tc2_System.MEMSET(ADR(abyOutput[nBytes + 1]), 16#00, MAX_FAST_M_FUNC_OUTPUT_IDX - nBytes);
+		END_IF
+	END_IF
+END_WHILE
+
+(****************************************************************************************)
+(*	  							   Reset first cycle indicator							*)
+(****************************************************************************************)
+bFirstCycle						:= FALSE;]]></ST>
+    </Implementation>
+    <Property Name="DequeuingRequired" Id="{26aa0363-bb4d-40fa-aefb-d5c286f1a018}">
+      <Declaration><![CDATA[PROPERTY DequeuingRequired : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{b5ce4c6c-8a0e-4c80-acec-949c79d2c661}">
+        <Declaration><![CDATA[]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[DequeuingRequired	:= (nQueuedCount > 0) AND 
+					   (astQueue[0].eState <> E_FastMFunctionState.EMPTY) AND
+					   (astQueue[0].nSwitchTime < CYCLE_TIME);]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="ClearQueue" Id="{2ee53e49-f123-48ae-ac33-03a06ea5afe7}">
+      <Declaration><![CDATA[METHOD ClearQueue
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Tc2_System.MEMSET(ADR(astQueue), 16#00, SIZEOF(astQueue));
+nQueuedCount := 0;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Dequeue" Id="{4fd2d887-e36b-41a3-bf27-d3767e6541d9}">
+      <Declaration><![CDATA[METHOD Dequeue : ST_FastMFunctionBufferItem
+VAR
+	stReturn	: ST_FastMFunctionBufferItem;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF (nQueuedCount > 0) THEN
+	stReturn		:=	astQueue[0]; 
+	Tc2_System.MEMMOVE(ADR(astQueue[0]), ADR(astQueue[1]), SIZEOF(astQueue) - SIZEOF(stReturn));
+	
+	nQueuedCount	:= nQueuedCount - 1;
+	Dequeue			:= stReturn;
+END_IF 
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="RefreshQueue" Id="{5c3b3853-824b-4678-b556-fa3a4a4c9365}">
+      <Declaration><![CDATA[METHOD RefreshQueue
+VAR_INPUT
+	nCycleTime: UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF (nQueuedCount > 0) THEN
+	FOR nLoop := 0 TO (nQueuedCount - 1) DO
+		astQueue[nLoop].nSwitchTime	:= astQueue[nLoop].nSwitchTime - nCycleTime;
+	END_FOR
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Enqueue" Id="{a97c34f4-3a71-42f4-9ceb-baf6a7f402ea}">
+      <Declaration><![CDATA[METHOD Enqueue
+VAR_INPUT
+	eState			: E_FastMFunctionState;
+	nSwitchTime		: DINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF (nQueuedCount <= MAX_FAST_M_FUNC_OUTPUT_IDX) THEN
+	astQueue[nQueuedCount].eState		:= eState;
+	astQueue[nQueuedCount].nSwitchTime	:= nSwitchTime;
+	nQueuedCount						:= nQueuedCount + 1;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

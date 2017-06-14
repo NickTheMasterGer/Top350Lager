@@ -1,0 +1,17 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="FB_Diag" Id="{a88242f6-fb2d-4fb1-b417-5c69a9a55e74}">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Diag
+VAR_OUTPUT
+	Alarm: BOOL;
+	Vorwarn: BOOL;
+	Meld: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[Alarm := TRUE;
+Vorwarn := TRUE;
+Meld := TRUE;]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

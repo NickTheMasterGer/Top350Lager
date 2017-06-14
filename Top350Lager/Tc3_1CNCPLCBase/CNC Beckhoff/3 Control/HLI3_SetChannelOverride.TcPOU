@@ -1,0 +1,36 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI3_SetChannelOverride" Id="{02f12908-3a70-4d2c-a9a1-37af27cb3b94}">
+    <Declaration><![CDATA[FUNCTION HLI3_SetChannelOverride : BOOL
+VAR_INPUT
+	/// Number of channel 
+	nChanIdx: INT;
+	nOverride: UINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: HLI_SetChannelOverride                            *)
+(* --------------------------------------------------------- *)
+(*   Desc: Set the channel Override                          *)
+(* Author: MK, MiB                                           *)
+(*   Date: 20.11.2012                                        *)
+(*   Rev.: 1.1                                               *)
+(* ========================================================= *)
+
+IF NOT HLI3_CheckChannelValid(nChannel := nChanIdx) THEN
+	HLI3_SetChannelOverride := FALSE;
+	RETURN;
+END_IF
+
+(* Limit the override *)
+IF nOverride > 1200	THEN nOverride := 1200; END_IF
+IF nOverride < 0 THEN nOverride := 0; END_IF
+
+gpCh[nChanIdx]^.bahn_mc_control.override_feedrate.command_w := nOverride;
+
+HLI3_SetChannelOverride := TRUE;
+]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,235 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.38">
+  <POU Name="HLI3_BlockSearch" Id="{cfdf3cb1-c810-4eda-8fd1-1f9af887b9bd}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK HLI3_BlockSearch
+VAR_INPUT
+	/// Number of channel 
+	nChanIdx: INT;
+	/// interface values 
+	BlockSearch: ST_BlockSearch;
+END_VAR
+VAR_IN_OUT
+	/// Edge signal 
+	bStartWrite: BOOL;
+	/// Edge signal 
+	bStartRead: BOOL;
+END_VAR
+VAR_OUTPUT
+	Busy: BOOL;
+	Err: BOOL;
+	nErrorState: UINT;
+	/// interface values 
+	nActType: INT;
+	fActDistance: LREAL;
+	bActAutoReturn: BOOL;
+	nActDeviationMax: UDINT;
+	nActBlockNumber: DINT;
+	nActPass: DINT;
+	nActBlockCount: DINT;
+	/// current values 
+	actualBlockNumber: DINT := 0;
+	actualBlockCount: UDINT := 0;
+	actualBlockCount_AfterReset: UDINT := 0;
+	coveredDistance: DINT;
+	coveredDistance_AfterReset: DINT := 0;
+END_VAR
+VAR
+	bReadStarted: BOOL;
+	bWriteStarted: BOOL;
+	rtStartRead: R_TRIG;
+	rtStartWrite: R_TRIG;
+	writeType: WriteBsType;
+	readType: ReadBsType;
+	writeDistance: WriteBsCoveredDistance;
+	readDistance: ReadBsCoveredDistance;
+	writeAutoReturn: WriteBsAutoReturn;
+	readAutoReturn: ReadBsAutoReturn;
+	writeDeviationMax: WriteBsDeviationMax;
+	readDeviationMax: ReadBsDeviationMax;
+	writeBlockNumber: WriteBsBlockNumber;
+	ReadBlockNumber: ReadBsBlockNumber;
+	writeBlockCount: WriteBsBlockCount;
+	ReadBlockCount: ReadBsBlockCount;	
+	writePass: WriteBsPass;
+	readPass: ReadBsPass;
+	nChannelIdxGrp: UDINT;
+	/// Timer to read axisposition cyclically        
+	Timer: TON;
+	actualcoveredDistance: BOOL;
+	ChannelMode: UDINT;
+	BlockSearchStart: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ---------------------*----------------------------------|------------------------------------------------------- *)
+(* PURPOSE:                                                                                                         *)
+(*                                                                                                                  *)
+(*                                                                                                                  *)
+(* SCOPE:                                                                                                           *)
+(*                                                                                                                  *)
+(*                                                                                                                  *)
+(* REMARKS:                                                                                                         *)
+(*                                                                                                                  *)
+(*                                                                                                                  *)
+(* AUTHOR:              VERSION     DATE                   CHECKED FROM      DATE     STATUS                        *)
+(*    MK                1.0         07.05.2003                                                                      *)
+(*    TV                1.1         10.06.2006                                                                      *)
+(*    TV                1.2         20.08.2014                                                                      *)
+(*    TV                1.2         29.09.2014                                                                      *)
+(*    TV                1.3         25.06.2015                                                                      *)
+(* ---------------------*----------------------------------|------------------------------------------------------- *)
+
+IF NOT HLI3_CheckChannelValid(nChannel := nChanIdx) THEN
+	RETURN;
+END_IF
+
+
+
+
+Err := FALSE;
+nChannelIdxGrp := 16#00020100 + INT_TO_UDINT(nChanIdx)+1;
+BlockSearchStart := FALSE;
+
+
+(* ----------------------------------- *)
+(* --- write block search commands --- *)
+(* ----------------------------------- *)
+
+rtStartWrite(CLK:=bStartWrite);
+IF rtStartWrite.Q THEN
+   bWriteStarted := TRUE;
+   bStartWrite := FALSE; (* reset the HMI signal *)
+END_IF
+
+IF bWriteStarted THEN
+   Busy := TRUE;
+   IF BlockSearch.nType = 5 THEN
+   	BlockSearch.nType := 3;								(* start position by block count *)
+
+		BlockSearch.bAutoReturn := TRUE;
+		(*nPass	:= 1;*)
+	END_IF
+
+	(* write block search data to memory *)
+   writeType(nIdxGrp:=nChannelIdxGrp, bStart:=rtStartWrite.Q, nType:=BlockSearch.nType);
+   writeDistance(nIdxGrp:=nChannelIdxGrp, bStart:=rtStartWrite.Q, fDistance:=(BlockSearch.fDistance*10.0));
+   writeAutoReturn(nIdxGrp:=nChannelIdxGrp, bStart:=rtStartWrite.Q, bAutoReturn:=BlockSearch.bAutoReturn);
+   writeDeviationMax(nIdxGrp:=nChannelIdxGrp, bStart:=rtStartWrite.Q, nDeviationMax:=BlockSearch.nDeviationMax);
+   writePass(nIdxGrp:=nChannelIdxGrp, bStart:=rtStartWrite.Q, nPass:=BlockSearch.nPass);
+
+	CASE BlockSearch.nType OF		(* count and number share a part of the memory *)
+		3: writeBlockCount(nIdxGrp:=nChannelIdxGrp, bStart:=rtStartWrite.Q, nBlockCount:=BlockSearch.nBlockCount);
+		4: writeBlockNumber(nIdxGrp:=nChannelIdxGrp, bStart:=rtStartWrite.Q, nBlockNumber:=BlockSearch.nBlockNumber);
+   END_CASE
+
+   IF writeType.Busy = FALSE
+      AND writeDistance.BUSY = FALSE
+      AND writeAutoReturn.BUSY = FALSE
+      AND writeDeviationMax.BUSY = FALSE
+      AND writeBlockNumber.BUSY = FALSE
+      AND writePass.BUSY = FALSE
+      AND writeBlockCount.BUSY = FALSE
+   THEN
+      Busy := FALSE;
+      bWriteStarted := FALSE;
+      BlockSearchStart := TRUE;
+   END_IF
+END_IF
+
+
+(* Satzsuchlauf starten *)
+
+(*
+IF (BlockSearchStart) AND ((nType = 3) OR (nType = 4)) THEN
+	PLCMachineMode[nChan].Start := TRUE;
+END_IF
+*)
+
+(* -------------------------------- *)
+(* --- read block search states --- *)
+(* -------------------------------- *)
+
+(* the next rows only for test *)
+(* Start a cyclic timer with period 2 sec. *)
+Timer(IN := NOT(Timer.Q), PT := T#2000ms);
+
+rtStartRead(CLK:=bStartRead);
+(*rtStartRead(CLK:=Timer.Q);*)
+IF rtStartRead.Q THEN
+   bReadStarted := TRUE;
+END_IF
+
+IF bReadStarted THEN
+	Busy := TRUE;
+
+   readType(nIdxGrp:=nChannelIdxGrp, bStart:=rtStartRead.Q, pDest:=ADR(nActType));
+   readDistance(nIdxGrp:=nChannelIdxGrp, bStart:=rtStartRead.Q, pDest:=ADR(fActDistance));
+   readAutoReturn(nIdxGrp:=nChannelIdxGrp, bStart:=rtStartRead.Q, pDest:=ADR(bActAutoReturn));
+   readDeviationMax(nIdxGrp:=nChannelIdxGrp, bStart:=rtStartRead.Q, pDest:=ADR(nActDeviationMax));
+	CASE nActType OF			(* count and number cannot be read within a single cycle! *)
+		3: readBlockCount(nIdxGrp:=nChannelIdxGrp, bStart:=rtStartRead.Q, pDest:=ADR(nActBlockCount));
+		4: readBlockNumber(nIdxGrp:=nChannelIdxGrp, bStart:=rtStartRead.Q, pDest:=ADR(nActBlockNumber));
+	END_CASE;
+   readPass(nIdxGrp:=nChannelIdxGrp, bStart:=rtStartRead.Q, pDest:=ADR(nActPass));
+
+   (*
+   readActualBlockNumber(nIdxGrp:=nChannelIdxGrp, bStart:=rtStartRead.Q, pDest:=ADR(actualBlockNumber));
+   readActualBlockCount(nIdxGrp:=nChannelIdxGrp, bStart:=rtStartRead.Q, pDest:=ADR(actualBlockCount));
+   *)
+
+   IF readType.Busy = FALSE
+      AND readDistance.Busy = FALSE
+      AND readAutoReturn.Busy = FALSE
+      AND readDeviationMax.Busy = FALSE
+      AND readBlockNumber.Busy = FALSE
+      AND readPass.Busy = FALSE      
+   THEN
+		Busy := FALSE;
+
+		bReadStarted := FALSE;
+		bStartRead := FALSE; (* reset the HMI signal *)
+   END_IF
+END_IF
+
+actualBlockNumber := gpCh[nChanIdx]^.bahn_state.block_nr_r;
+actualBlockCount  := gpCh[nChanIdx]^.bahn_state.block_count_r; 
+
+coveredDistance := gpCh[nChanIdx]^.bahn_state.covered_distance_r;  (* just read actual covered distance *)
+
+(* Speichert die Unterbrechungsstelle *)
+ChannelMode := HLI3_GetChannelMode(nChanIdx);
+IF (actualBlockCount <> 0) AND (ChannelMode = 2) AND (CNCSystem.Channel[nChanIdx].ActState =4) THEN
+	actualBlockCount_AfterReset := actualBlockCount;									(* Zeiger bleibt auch nach Reset erhalten *)
+	coveredDistance_AfterReset := coveredDistance;
+END_IF
+
+(*	UnterbrechungsstelleWeg			:= coveredDistance/10.0;*)
+
+(*actualBlockNumber := gpAx[0]^.lr_state.block_nr_r;  asume first axis is always moved *)
+
+
+(* handshake during block search on/off *)
+gpCh[nChanIdx]^.bahn_lc_control.block_search.enable_w := TRUE;
+
+IF gpCh[nChanIdx]^.bahn_lc_control.block_search.command_r <>
+   gpCh[nChanIdx]^.bahn_lc_control.block_search.state_w THEN
+
+   (* acknowledge *)
+   gpCh[nChanIdx]^.bahn_lc_control.block_search.state_w :=
+      gpCh[nChanIdx]^.bahn_lc_control.block_search.command_r;
+
+(*
+   (* pup up of change *)
+   IF gpCh[nHliChIfcIdx]^.bahn_lc_control.block_search.state_w THEN
+      ADSLOGDINT( msgCtrlMask := ADSLOG_MSGTYPE_MSGBOX OR ADSLOG_MSGTYPE_LOG,
+                  msgFmtStr := 'block search: %d', dintArg := 1);
+   ELSE
+      ADSLOGDINT( msgCtrlMask := ADSLOG_MSGTYPE_MSGBOX OR ADSLOG_MSGTYPE_LOG,
+                  msgFmtStr := 'block search: %d', dintArg := 0);
+   END_IF
+*)
+END_IF
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

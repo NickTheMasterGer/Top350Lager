@@ -1,0 +1,38 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI3_ChannelResetMFunctions" Id="{d462947c-debf-40c3-9672-4209fe3824e0}">
+    <Declaration><![CDATA[FUNCTION HLI3_ChannelResetMFunctions : BOOL
+VAR_INPUT
+	/// Channel number 
+	nChanIdx: INT;
+END_VAR
+VAR
+	idx: INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: HLI_ChannelResetMFunctions                        *)
+(* --------------------------------------------------------- *)
+(*   Desc:                                                   *)
+(* Author: MK                                                *)
+(*   Date: 10.05.2007                                        *)
+(*   Rev.: 1.00                                              *)
+(* ========================================================= *)
+
+IF NOT HLI3_CheckChannelValid(nChannel := nChanIdx) THEN
+	HLI3_ChannelResetMFunctions := FALSE;
+	RETURN; (* A b b r u c h *)
+END_IF
+
+
+FOR idx := 1 TO 999 DO
+	CNCSystem.Channel[nChanIdx].M[idx].bState_rw := FALSE;
+	CNCSystem.Channel[nChanIdx].M[idx].bRes := FALSE;
+	CNCSystem.Channel[nChanIdx].actM_r :='';
+END_FOR
+
+HLI3_ChannelResetMFunctions := TRUE;]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4019.0">
+  <DUT Name="E_VEVariablesType" Id="{1dab7cdb-9bf7-4735-b890-60aedf8652fd}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_VEVariablesType :
+(
+	none := 0,
+	BOOLEAN,
+	SGN08,
+	UNS08,
+	SGN16,
+	UNS16,
+	SGN32,
+	UNS32,
+	REAL64,
+	VESTRING
+);
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

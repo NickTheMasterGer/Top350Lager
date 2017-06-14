@@ -1,0 +1,68 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4019.0">
+  <POU Name="HLI3_ManualExecution" Id="{7d19986b-695f-4766-a7a1-c34a5e813fa6}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK HLI3_ManualExecution
+VAR_INPUT
+	nChan: INT;
+	/// number of the HB_KeyControlUnit 
+	nKeyControlUnit: INT;
+	/// static signal 
+	bKeyPos: BOOL;
+	/// static signal 
+	bKeyNeg: BOOL;
+END_VAR
+VAR
+	Cmd_Dir: E_HLI_MM_KEYDirection;
+	Act_Dir: E_HLI_MM_KEYDirection;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: HLI_ManualExecution                    		 		 *)
+(* --------------------------------------------------------- *)
+(*   Desc:                                                   *)
+(*   Author: CL / TV                                         *)
+(*   Date: 24.07.2015                                       *)
+(*   Rev.: 6.0                                               *)
+(* ========================================================= *)
+
+(* flank detection second axis*)
+gpCh[nChan]^.hb_mc_control.key[nKeyControlUnit].enable_w := TRUE;
+
+IF (NOT bKeyPos AND NOT bKeyNeg) OR (bKeyPos AND Act_Dir = KEY_DIR_NEGATIVE) OR (bKeyNeg AND Act_Dir = KEY_DIR_POSITIVE) THEN
+	Cmd_Dir := KEY_DIR_NOT_PRESSED;
+	IF NOT gpCh[nChan]^.hb_mc_control.key[nKeyControlUnit].command_semaphor_rw AND Cmd_dir <> Act_Dir THEN
+		gpCh[nChan]^.hb_mc_control.key[nKeyControlUnit].command_w.log_key_nr := DINT_TO_UINT(nKeyControlUnit)+1;
+		gpCh[nChan]^.hb_mc_control.key[nKeyControlUnit].command_w.direction := KEY_DIR_NOT_PRESSED;
+		gpCh[nChan]^.hb_mc_control.key[nKeyControlUnit].command_semaphor_rw := TRUE;
+		Act_Dir := KEY_DIR_NOT_PRESSED;
+	END_IF	
+END_IF
+
+
+IF bKeyPos AND Act_Dir = KEY_DIR_NOT_PRESSED THEN
+	Cmd_Dir := KEY_DIR_POSITIVE;
+	IF NOT gpCh[nChan]^.hb_mc_control.key[nKeyControlUnit].command_semaphor_rw AND Cmd_dir <> Act_Dir THEN
+		gpCh[nChan]^.hb_mc_control.key[nKeyControlUnit].command_w.log_key_nr := DINT_TO_UINT(nKeyControlUnit)+1;
+		gpCh[nChan]^.hb_mc_control.key[nKeyControlUnit].command_w.direction := KEY_DIR_POSITIVE;
+		gpCh[nChan]^.hb_mc_control.key[nKeyControlUnit].command_semaphor_rw := TRUE;
+		Act_Dir := KEY_DIR_POSITIVE;
+	END_IF	
+END_IF
+
+IF bKeyNeg AND Act_Dir = KEY_DIR_NOT_PRESSED  THEN
+	Cmd_Dir := KEY_DIR_NEGATIVE;
+	IF NOT gpCh[nChan]^.hb_mc_control.key[nKeyControlUnit].command_semaphor_rw AND Cmd_dir <> Act_Dir THEN
+		gpCh[nChan]^.hb_mc_control.key[nKeyControlUnit].command_w.log_key_nr := DINT_TO_UINT(nKeyControlUnit)+1;
+		gpCh[nChan]^.hb_mc_control.key[nKeyControlUnit].command_w.direction := KEY_DIR_NEGATIVE;
+		gpCh[nChan]^.hb_mc_control.key[nKeyControlUnit].command_semaphor_rw := TRUE;
+		Act_Dir := KEY_DIR_NEGATIVE;
+	END_IF	
+END_IF
+	
+
+
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

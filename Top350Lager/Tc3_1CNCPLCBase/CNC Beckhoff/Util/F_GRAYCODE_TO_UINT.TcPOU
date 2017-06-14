@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4019.0">
+  <POU Name="F_GRAYCODE_TO_UINT" Id="{aa99841b-a5b9-4754-a53e-59663bf95f75}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION F_GRAYCODE_TO_UINT : UINT
+VAR_INPUT
+	byGraycodeSwitches	: BYTE;
+END_VAR
+VAR
+	nLoopCount				: INT;
+	byResult					: BYTE;
+	bySwitches				: BYTE;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[bySwitches			:= byGraycodeSwitches;
+byResult				:= 0;
+
+FOR nLoopCount := 0 TO 31 DO
+	byResult 		:= byResult XOR bySwitches;
+	bySwitches		:= SHR(bySwitches, 1);
+END_FOR
+
+F_GRAYCODE_TO_UINT	:= BYTE_TO_UINT(byResult);]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

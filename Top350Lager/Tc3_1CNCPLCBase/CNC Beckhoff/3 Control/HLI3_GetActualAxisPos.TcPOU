@@ -1,0 +1,25 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI3_GetActualAxisPos" Id="{cfd8a458-4bc6-439f-ba90-e6344bd975f0}">
+    <Declaration><![CDATA[FUNCTION HLI3_GetActualAxisPos : LREAL
+VAR_INPUT
+	///Achs ID
+	nHliAxisIdx: INT;
+END_VAR
+VAR
+	HLI_GetActualAxisPos: DINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+IF NOT (HLI3_CheckAxisValid(nHliAxisIdx := nHliAxisIdx)) THEN
+	HLI3_GetActualAxisPos := -1;
+	RETURN;
+END_IF
+
+HLI3_GetActualAxisPos:=  gpAx[nHliAxisIdx]^.lr_state.current_position_acs_r;
+]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

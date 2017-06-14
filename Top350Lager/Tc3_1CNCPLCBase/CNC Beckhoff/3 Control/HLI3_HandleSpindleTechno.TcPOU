@@ -1,0 +1,420 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4019.2">
+  <POU Name="HLI3_HandleSpindleTechno" Id="{ddbde3a0-5fd3-4bee-9d79-2f908e1587aa}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK HLI3_HandleSpindleTechno
+VAR_INPUT
+	/// Logical axis number of the plc spindle 
+	nHliAxisIdx: INT;
+	/// The channel which commands the spindle, only used if 'bIsChannelSpecific' set TRUE 
+	nHliChannelIdx: INT;
+	/// Has to be set TRUE if the spindel intechno function is transmitted via the channel specific section of the HLI
+	bIsChannelSpecific: BOOL;
+	/// if using a plc controlled spindle: configured log_ax_nr in channel list 
+	nLogAxisNoChannelSpecific: INT;
+	/// Has to be set TRUE if zthis FB should car about gear change M functions M40 - M45
+	bHandleGearChange: BOOL;
+	/// Resets all internal states and variables of this function block 
+	bChannelReset: BOOL;
+END_VAR
+VAR_OUTPUT
+	/// Returns the commanded revolution programmed with a M03 or M05 [] 
+	nRevolution: DINT;
+	/// Returns the target position programmed with a M19 [0.1µm] or [] 
+	nPosition: DINT;
+	/// Error flag 
+	bError: BOOL;
+	/// Error id 
+	nErrorId: UDINT;
+END_VAR
+VAR_IN_OUT
+	/// Raises if the cnc program encounters a M03 for the relevant spindle. Reset this for acknowledge 
+	M03: BOOL;
+	/// Raises if the cnc program encounters a M04 for the relevant spindle. Reset this for acknowledge 
+	M04: BOOL;
+	/// Raises if the cnc program encounters a M05 for the relevant spindle. Reset this for acknowledge 
+	M05: BOOL;
+	/// Raises if the cnc program encounters a M19 for the relevant spindle. Reset this for acknowledge 
+	M19: BOOL;
+END_VAR
+VAR
+	/// Raises if the cnc program encounters a M40 for the relevant spindle. Reset this for acknowledge 
+	pM40: POINTER TO BOOL;
+	/// Raises if the cnc program encounters a M41 for the relevant spindle. Reset this for acknowledge 
+	pM41: POINTER TO BOOL;
+	/// Raises if the cnc program encounters a M42 for the relevant spindle. Reset this for acknowledge 
+	pM42: POINTER TO BOOL;
+	/// Raises if the cnc program encounters a M43 for the relevant spindle. Reset this for acknowledge 
+	pM43: POINTER TO BOOL;
+	/// Raises if the cnc program encounters a M44 for the relevant spindle. Reset this for acknowledge 
+	pM44: POINTER TO BOOL;
+	/// Raises if the cnc program encounters a M45 for the relevant spindle. Reset this for acknowledge 
+	pM45: POINTER TO BOOL;	
+
+
+	/// Number of open technology functions 
+	nOpenTechnoCount: UINT;
+	/// Internal acknowledge signal 
+	bAcknowledge: BOOL;
+	/// Internal state of M03 request 
+	M03_Internal: BOOL;
+	/// Internal state of M04 request 
+	M04_Internal: BOOL;
+	/// Internal state of M05 request 
+	M05_Internal: BOOL;
+	/// Internal state of M19 request 
+	M19_Internal: BOOL;
+	/// Internal state of M19 request 
+	M40_Internal: BOOL;
+	/// Internal state of M19 request 
+	M41_Internal: BOOL;
+	/// Internal state of M19 request 
+	M42_Internal: BOOL;
+	/// Internal state of M19 request 
+	M43_Internal: BOOL;
+	/// Internal state of M19 request 
+	M44_Internal: BOOL;
+	/// Internal state of M19 request 
+	M45_Internal: BOOL;
+	/// Index of axis specific HLI area 
+	nHliAxIfcIdx: UDINT;
+	/// Index of axis specific technology function at HLI 
+	nTechFctMaxIdx: UINT;
+	/// Counting variable for loop processing 
+	nLoop: UINT;
+	/// Pointer to technology function data 
+	pActTechnoUnit: POINTER TO TECHNO_UNIT_AX;
+	/// Pointer to spindle specific data 
+	pSProcess: POINTER TO HLI_S_PROZESS;
+	pMProcess: POINTER TO HLI_M_H_PROZESS;
+	/// Rising trigger of input 'bChannelReset' 
+	fbRtrigChannelReset: R_TRIG;
+	
+	bFirstRun : BOOL := TRUE;
+	dummyM40: BOOL;
+	dummyM41: BOOL;
+	dummyM42: BOOL;
+	dummyM43: BOOL;
+	dummyM44: BOOL;
+	dummyM45: BOOL;
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(****************************************************************************************)
+(* POU:		HLI3_HandlePlcSpindle                      									*)
+(* Type:	Function Block																*)
+(* Author: 	HR, MiB, TV																    *)
+(* Date: 	10/11/10																	*)
+(* Rev.: 	1.0																			*)
+(* Rev.: 	1.6	14/10/23    															*)
+(* ------------------------------------------------------------------------------------ *)
+(* Desc:	Function block for handling technology functions of PLC spindles. It works	*)
+(*			properly if there is a ation axis in the configuration. The logical 		*)
+(*			axis no. 'n' of that axis is used to indetify that spindle in this function	*)
+(*			block. This implies a spindle configuration like the folowing:				*)
+(*				spdl_anzahl                         1	(maybe more?)					*)
+(*				main_spindle_ax_nr                  n	(enter right value there)		*)
+(*				main_spindle_name                   S									*)
+(*				spindle_m_fct_free                  0									*)
+(*				spindel[0].bezeichnung              S1									*)
+(*				spindel[0].log_achs_nr              n	(enter right value there)		*)
+(*				spindel[0].plc_control              1									*)
+(*																						*)
+(*			The function block may raise some errors specified by an error id:			*)
+(*				+ 10000: axis number not valid!											*)
+(*																						*)
+(****************************************************************************************)
+(* Date:	13/09/16																	*)
+(* Author:	RCH																			*)
+(* Rev:		1.1																			*)
+(* ------------------------------------------------------------------------------------ *)
+(* Desc 	Renamed, according to Tc2 version. This FB also works for CNC spindles with	*) 
+(*			S or M functions set to inform PLC. 										*)
+(****************************************************************************************)
+(* Date:	13/09/16																	*)
+(* Author:	RCH																			*)
+(* Rev:		1.2																			*)
+(* ------------------------------------------------------------------------------------ *)
+(* Desc 	Introduced new input parameters 'bIsChannelSpecific' and 'nChannelNo' in 	*)
+(*			order to make this FB work for PLC spindles which are sending synch.		*)
+(*			requests via the channel specific section of the HLI. Here the spindle		*)
+(* 			specific parameters have to be set as follows:								*)
+(*				spindel[n].plc_control            1			(P-CHAN-00069)				*)
+(*				spindel[n].log_achs_nr            m			(P-CHAN-00036)				*)
+(*																						*)
+(*			The logical axis number in P-CHAN-00036 used for such a spindle must not be	*)
+(*			lower than one and must not be used by any other axis. This FB works if the	*)
+(*			value of this logical axis number fits the parameter 'nHliAxisIdx' only!	*)
+(* 																						*)
+(*			In order to guarantee save HLI access the following new error codes have	*)
+(*			been introduced:															*)
+(*				+ 20000: Channel no lower than one!										*)
+(*				+ 20001: Channel number exceeds number of configured channels.			*)
+(*				+ 20002: No HLI data for channel.										*)
+(****************************************************************************************)
+(* Date:	14/01/22																	*)
+(* Author:	TV																			*)
+(* Rev:		1.3																			*)
+(* ------------------------------------------------------------------------------------ *)
+(* Desc:	bugfix in function to check nHLIAxisIdx and LogAxisId						*) 
+(****************************************************************************************)
+(* Date:	14/09/10																	*)
+(* Author:	RCH																			*)
+(* Rev:		1.4																			*)
+(* ------------------------------------------------------------------------------------ *)
+(* Desc 	Added optional handling of spindle gear change M functions M40 - M45.		*)
+(****************************************************************************************)
+(* Date:	14/09/12																	*)
+(* Author:	RCH																			*)
+(* Rev:		1.5																			*)
+(* ------------------------------------------------------------------------------------ *)
+(* Desc 	Fixed bug with spindle M functions send by the channel spec. section of the	*)
+(*			HLI. So far the channel specific section was used for determining the value *)
+(*			of  'nTechFctMaxidx'.														*)
+(****************************************************************************************)
+(* Date:	14/10/23																	*)
+(* Author:	MiB																			*)
+(* Rev:		1.6																			*)
+(* ------------------------------------------------------------------------------------ *)
+(* Desc 	Introduced parameter "nLogAxisNoChannelSpecific" which allows to use a plc  *)
+(*			spindle without a simulation axis for the spindle. 				 			*)
+(*			This paramater is only used if "bIsChannelSpecific == true"					*)
+(*																						*)
+(*				spindel[n].plc_control            1			(P-CHAN-00069)				*)
+(*				spindel[n].log_achs_nr            m			(P-CHAN-00036)				*)
+(*																						*)
+(*			The logical axis number in P-CHAN-00036 used for such a spindle must not be	*)
+(*			lower than one and must not be used by any other axis. This FB works if the	*)
+(*			value of this logical axis number fits the parameter 						*)
+(*			'nLogAxisNoChannelSpecific' only!											*)
+(****************************************************************************************)
+(* Date:	15/03/05																	*)
+(* Author:	MiB																			*)
+(* Rev:		1.7																			*)
+(* ------------------------------------------------------------------------------------ *)
+(* Desc 	Removed gearchange m functions from var_in_out							    *)
+(*			Created new FB HLI3_SpindleTechnoGearchange									*)
+(****************************************************************************************)
+
+(****************************************************************************************)
+(*								Init Pointer to pM40..pM45								*)
+(****************************************************************************************)
+IF bFirstRun THEN
+	bFirstRun := FALSE;
+	pM40 := ADR(dummyM40);
+	pM41 := ADR(dummyM41);
+	pM42 := ADR(dummyM42);
+	pM43 := ADR(dummyM43);
+	pM44 := ADR(dummyM44);
+	pM45 := ADR(dummyM45);	
+END_IF
+
+A_HandleTechno();
+]]></ST>
+    </Implementation>
+    <Action Name="A_HandleTechno" Id="{030316f9-0627-480a-b41d-1d0d9a456639}">
+      <Implementation>
+        <ST><![CDATA[
+(****************************************************************************************)
+(*								Cyclic reset of  error flag 							*)
+(****************************************************************************************)
+bError										:= FALSE;
+nErrorId									:= 0;
+
+(****************************************************************************************)
+(*							  Check for valid logical axis no.							*)
+(****************************************************************************************)
+IF NOT bIsChannelSpecific AND NOT HLI3_CheckAxisValid(nHliAxisIdx := nHliAxisIdx) THEN
+	bError									:= TRUE;
+	nErrorId								:= 10000;
+	RETURN;
+END_IF
+
+IF NOT HLI3_CheckChannelValid(nChannel := nHliChannelIdx) THEN
+	bError									:= TRUE;
+	nErrorId								:= 20000;
+	RETURN;	
+END_IF
+
+(****************************************************************************************)
+(*											Reset										*)
+(****************************************************************************************)
+fbRtrigChannelReset
+	(CLK := bChannelReset);
+
+IF fbRtrigChannelReset.Q THEN
+	nRevolution		:= 0;
+	nPosition		:= 0;
+	bAcknowledge	:= FALSE;
+	M03				:= FALSE;
+	M03_Internal	:= FALSE;
+	M04				:= FALSE;
+	M04_Internal	:= FALSE;
+	M05				:= FALSE;
+	M05_Internal	:= FALSE;
+	M19				:= FALSE;
+	M19_Internal	:= FALSE;	
+	pM40^			:= FALSE;
+	M40_Internal	:= FALSE;
+	pM41^			:= FALSE;
+	M41_Internal	:= FALSE;
+	pM42^			:= FALSE;
+	M42_Internal	:= FALSE;
+	pM43^			:= FALSE;
+	M43_Internal	:= FALSE;
+	pM44^			:= FALSE;
+	M44_Internal	:= FALSE;
+	pM45^			:= FALSE;
+	M45_Internal	:= FALSE;
+END_IF
+
+(****************************************************************************************)
+(*									Receive requests from cnc							*)
+(****************************************************************************************)
+(* Look out for open technology function either on the channel or the axis specific		*)
+(* section of the HLI, depending on parameter ''.										*)
+IF bIsChannelSpecific THEN
+	nOpenTechnoCount	:= gpCh[nHliChannelIdx]^.used_units_std_sync_r;
+	nTechFctMaxidx 		:= gpCh[nHliChannelIdx]^.used_units_std_sync_r - 1;
+ELSE
+	nOpenTechnoCount	:= gpAx[nHliAxisIdx]^.used_units_std_sync_r;
+	nTechFctMaxidx 		:= gpAx[nHliAxisIdx]^.used_units_std_sync_r - 1;
+END_IF
+
+IF nOpenTechnoCount > 0 THEN
+	FOR nLoop := 0 TO nTechFctMaxIdx DO
+		(* Depending on the source determined by parameter 'bIsChannelSpecific', the		*)
+		(* channel or axis specific section of the HLI will be examined.					*)
+		IF bIsChannelSpecific THEN
+			pActTechnoUnit	:= ADR(gpCh[nHliChannelIdx]^.techno_unit_std_sync[nLoop]);
+		ELSE
+			(* Get current axis specifc technology data *)
+			pActTechnoUnit	:= ADR(gpAx[nHliAxisIdx]^.techno_unit_std_sync[nLoop]);
+		END_IF
+	
+		(* Check request *)
+		IF pActTechnoUnit^.please_rw AND
+		   NOT pActTechnoUnit^.done_w
+		THEN
+			CASE UINT_TO_UDINT(pActTechnoUnit^.fkt_ctrl_r) OF
+		     (* -------------------------------------------------------------------------- *)
+			 (* Handle M function *)
+			 HLI_INTF_M_FKT:
+				pMProcess					:= ADR(pActTechnoUnit^.attribut_r.data[0]);
+				
+				IF (pMProcess > 0) AND bHandleGearChange THEN
+					CASE pMProcess^.nr OF
+					 40:	M_ManageAcknowledgement(ADR(M40_Internal), pM40, ADR(bAcknowledge));
+					 41:	M_ManageAcknowledgement(ADR(M41_Internal), pM41, ADR(bAcknowledge));
+					 42:	M_ManageAcknowledgement(ADR(M42_Internal), pM42, ADR(bAcknowledge));
+					 43:	M_ManageAcknowledgement(ADR(M43_Internal), pM43, ADR(bAcknowledge));
+					 44:	M_ManageAcknowledgement(ADR(M44_Internal), pM44, ADR(bAcknowledge));
+					 45:	M_ManageAcknowledgement(ADR(M45_Internal), pM45, ADR(bAcknowledge));
+					END_CASE
+				END_IF
+				
+			 (* -------------------------------------------------------------------------- *)
+			 (* Handle S function *)
+			 HLI_INTF_SPINDEL:
+				pSProcess					:= ADR(pActTechnoUnit^.attribut_r.data[0]);
+				
+				(* If we are working with spindle functions provided by the channel 		*)
+				(* specific section of the HLI the logical axis number transmitted from the *)
+				(* CNC must fit the one given in parameter 'nLogAxisNoChannelSpecific'!					*)												
+				IF bIsChannelSpecific AND (UINT_TO_INT(pSProcess^.log_achs_nr) <> nLogAxisNoChannelSpecific) THEN
+					RETURN;
+				END_IF
+	
+				CASE pSProcess^.move_cmd OF
+				 (* ----------------------------------------------------------------------- *)
+				 0: (* M19 *)
+					IF (pSProcess^.pos_cmd = 19) AND
+					   NOT M19_Internal THEN
+						nPosition			:= pSProcess^.pos;
+						M19_Internal		:= TRUE;
+						M19					:= TRUE;
+					ELSE
+						IF NOT M19 THEN
+							M19_Internal	:= FALSE;
+							bAcknowledge	:= TRUE;
+						END_IF
+					END_IF
+	
+				 (* ----------------------------------------------------------------------- *)
+				 3: (* M03 *)
+					nRevolution				:= pSProcess^.rev;
+	
+					IF NOT M03_Internal THEN
+						M03_Internal		:= TRUE;
+						M03					:= TRUE;
+					ELSE
+						IF NOT M03 THEN
+							M03_Internal	:= FALSE;
+							bAcknowledge	:= TRUE;
+						END_IF
+					END_IF
+	
+				 (* ----------------------------------------------------------------------- *)
+				 4: (* M04 *)
+					nRevolution				:= pSProcess^.rev;
+	
+					IF NOT M04_Internal THEN
+						M04_Internal		:= TRUE;
+						M04					:= TRUE;
+					ELSE
+						IF NOT M04 THEN
+							M04_Internal	:= FALSE;
+							bAcknowledge	:= TRUE;
+						END_IF
+					END_IF
+	
+				 (* ----------------------------------------------------------------------- *)
+				 5: (* M05 *)
+					IF NOT M05_Internal THEN
+						M05_Internal		:= TRUE;
+						M05					:= TRUE;
+					ELSE
+						IF NOT M05 THEN
+							M05_Internal	:= FALSE;
+							bAcknowledge	:= TRUE;
+						END_IF
+					END_IF
+	
+				END_CASE
+			END_CASE
+	
+			(* Handle acknowledgement *)
+			IF bAcknowledge THEN
+				bAcknowledge				:= FALSE;
+				nRevolution					:= 0;
+				nPosition					:= 0;
+				pActTechnoUnit^.please_rw 	:= FALSE;
+		   		pActTechnoUnit^.done_w		:= TRUE;
+			END_IF
+		END_IF
+	END_FOR
+	
+END_IF]]></ST>
+      </Implementation>
+    </Action>
+    <Method Name="M_ManageAcknowledgement" Id="{10c56206-5c45-435c-a18c-f51a0d558c13}">
+      <Declaration><![CDATA[{attribute 'object_name' := 'M_ManageAcknowledgement'}
+METHOD PRIVATE M_ManageAcknowledgement
+VAR_INPUT
+	pInternal: POINTER TO BOOL;
+	pPublic: POINTER TO BOOL;
+	pAcknowledgement: POINTER TO BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT pInternal^ THEN
+	pInternal^			:= TRUE;
+	pPublic^			:= TRUE;	
+ELSIF NOT pPublic^ THEN
+	pInternal^			:= FALSE;
+	pAcknowledgement^	:= TRUE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

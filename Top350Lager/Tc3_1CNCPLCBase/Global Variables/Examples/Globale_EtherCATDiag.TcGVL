@@ -1,0 +1,8 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <GVL Name="Globale_EtherCATDiag" Id="{2998fef1-e645-4fd5-b5b6-42ac75b58c2f}">
+    <Declaration><![CDATA[VAR_GLOBAL CONSTANT
+	iSLAVEADDR_ARR_SIZE: INT := 255;
+END_VAR]]></Declaration>
+    <ObjectProperties />
+  </GVL>
+</TcPlcObject>

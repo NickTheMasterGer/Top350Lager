@@ -1,0 +1,44 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="WriteBsDeviationMax" Id="{1c52a991-fcc6-4f8e-a952-ad6fbdbb4d56}">
+    <Declaration><![CDATA[FUNCTION_BLOCK WriteBsDeviationMax
+VAR_INPUT
+	nIdxGrp: UDINT;
+	bStart: BOOL;
+	nDeviationMax: UDINT;
+END_VAR
+VAR_OUTPUT
+	Busy: BOOL;
+	bErr: BOOL;
+END_VAR
+VAR
+	fbWrite: ADSWRITE;
+	bStarted: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF bStarted = FALSE THEN
+   IF bStart = TRUE THEN
+      bStarted := TRUE;
+      bErr := FALSE;
+      Busy := TRUE;
+   END_IF
+END_IF
+
+IF bStarted THEN
+   (* raising edge of Timer triggers write request *)
+   fbWrite( NetID := '', Port := 553, IdxGrp := nIdxGrp, IdxOffs := 16#0000004C,
+         LEN := 4, SrcAddr := ADR(nDeviationMax), WRITE := bStarted, TMOUT := T#1s);
+   IF NOT fbWrite.Busy THEN
+      (* There was an error in the execution of the write request *)
+      IF fbWrite.Err THEN
+         bErr := TRUE;
+      END_IF
+      fbWrite(WRITE := FALSE);    (* reset because of edge detection in FB ADSWRITE *)
+      bStarted := FALSE;
+      Busy := FALSE;
+   END_IF
+END_IF]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,35 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="HLI3_ChannelSetEmergencyStop" Id="{7abc190b-746d-44b1-86ad-aad7ec9d16d7}">
+    <Declaration><![CDATA[FUNCTION HLI3_ChannelSetEmergencyStop : BOOL
+VAR_INPUT
+	/// Number of channel 
+	nChanIdx: INT;
+	bEStop: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(****************************************************************************************)
+(* POU:			HLI_ChannelSetEmergenyStop												*)
+(* Type:		Function block															*)
+(* Customer:	Common																	*)
+(* Date:		09/03/12																*)
+(* Last:		20/11/12																*)
+(* ------------------------------------------------------------------------------------ *)
+(* Revision:	1.0																		*)
+(* Author:		HR,MiB																	*)
+(* Description: (Re-)Sets the channel specific emergency stop unit.						*)
+(****************************************************************************************)
+
+HLI3_ChannelSetEmergencyStop := FALSE;
+IF NOT HLI3_CheckChannelValid(nChannel := nChanIdx) THEN
+	RETURN;
+END_IF
+
+(* if the stop button from the HMI is selected the request is set *)
+gpCh[nChanIdx]^.bahn_mc_control.emergency_stop.command_w := bEStop;
+
+HLI3_ChannelSetEmergencyStop		:= TRUE;]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,34 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.23">
+  <DUT Name="ST_HMI_Manual" Id="{5c12810e-dbb1-4389-92ca-0a5d1af59ad3}">
+    <Declaration><![CDATA[TYPE ST_HMI_Manual :
+STRUCT
+	/// @1:Beschreibung @11:1 @2: 1.Spalte Beschreibung:0=tastend, 1 =rastend @3 2.Spalte Beschreibung:0=tastend, 1 =rastend ...
+	/// Milling 
+	milling: BYTE;
+	millingStatus: BYTE;
+	/// Blowing
+	/// @1:abblasen @11:1 @2:on:1 @3:Position 1 Super @4:Position 2 auf Taste2 @5:Position 3 @6: Pos 4 @7: Disable @8:Pos8 @9: Position 9 
+	blowing: BYTE;	
+	blowingStatus: BYTE;
+	/// Axis 
+	axisY: BYTE;
+	axisYStatus: BYTE;
+	/// @1:Z-Axis @11:1 @2:Forward:0 @3:Backward:0
+	axisZ: BYTE;
+	axisZStatus: BYTE;
+	/// @1:C-Axis @11:1 @2:Forward:0 @3:Backward:0
+	axisC: BYTE;
+	axisCStatus: BYTE;
+	/// @1:U-Axis @11:1 @2:Forward:0 @3:Backward:0 @5:Grundpos
+	axisU: BYTE;
+	axisUStatus: BYTE;
+	/// @1:V-Axis @11:1 @2:Forward:0 @3:Backward:0 @5:Grundpos
+	axisV: BYTE;
+	axisVStatus: BYTE;
+	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

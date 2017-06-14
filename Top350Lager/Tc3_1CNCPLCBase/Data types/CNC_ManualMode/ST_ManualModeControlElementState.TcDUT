@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4019.0">
+  <DUT Name="ST_ManualModeControlElementState" Id="{17e1a588-db94-45c9-b725-67bc21305a8e}">
+    <Declaration><![CDATA[TYPE ST_ManualModeControlElementState :
+STRUCT
+	stKeyUnit: ARRAY[0..HLI_KEY_MAXIDX] OF ST_ManualModeKeyHWUnit;
+	stHWUnit: ARRAY[0..HLI_HW_MAXIDX] OF ST_ManualModeKeyHWUnit;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

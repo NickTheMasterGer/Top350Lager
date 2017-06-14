@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4019.0">
+  <POU Name="HLI3_ManualExecutionRapidMode" Id="{0dd5cdc5-0e6e-4f5e-96ff-f70b538b7295}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK HLI3_ManualExecutionRapidMode
+VAR_INPUT
+	nChan: INT;
+	/// number of the HB_KeyControlUnit 
+	nKeyControlUnit: INT;
+	/// static signal 
+	bExecute: BOOL;
+END_VAR
+VAR
+	pRapidKey: POINTER TO MC_CONTROL_HB_RAPID_KEY_UNIT;
+	TONTimeOut: TON;
+	fbRtrigExec: R_TRIG;
+	fbFtrigExec: F_TRIG;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: HLI_ManualExecution                               *)
+(* --------------------------------------------------------- *)
+(*   Desc:                                                   *)
+(*   Author: TV                                              *)
+(*   Date: 24.07.2015                                        *)
+(*   Rev.: 6.0                                               *)
+(* ========================================================= *)
+
+
+IF nKeyControlUnit < 0 OR nKeyControlUnit > HLI_KEY_MAXIDX THEN
+	RETURN;
+END_IF;
+
+pRapidKey := ADR(gpCh[nChan]^.hb_mc_control.rapid_key);
+pRapidKey^.enable_w := TRUE;
+
+IF NOT pRapidKey^.command_semaphor_rw THEN
+	fbRtrigExec(clk := bExecute);
+	fbFtrigExec(clk := bExecute);
+END_IF
+
+IF fbRtrigExec.Q THEN
+	pRapidKey^.command_w.key_pressed := 1;
+	pRapidKey^.command_w.log_key_nr := INT_TO_UINT(nKeyControlUnit)+1;
+	pRapidKey^.command_semaphor_rw := TRUE;
+END_IF
+
+
+IF fbFtrigExec.Q THEN
+	pRapidKey^.command_w.key_pressed := 0;
+	pRapidKey^.command_w.log_key_nr := INT_TO_UINT(nKeyControlUnit)+1;
+	pRapidKey^.command_semaphor_rw := TRUE;
+END_IF
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

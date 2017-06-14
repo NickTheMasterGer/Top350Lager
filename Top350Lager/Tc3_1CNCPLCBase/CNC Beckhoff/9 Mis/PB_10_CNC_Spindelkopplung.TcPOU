@@ -1,0 +1,65 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <POU Name="PB_10_CNC_Spindelkopplung" Id="{06a0acd9-8576-4651-a1c3-59c79e201a4b}">
+    <Declaration><![CDATA[PROGRAM PB_10_CNC_Spindelkopplung
+VAR
+	pCoupling: POINTER TO HLI_COMMAND_AXIS_COUPLING;
+	p_AxisCouplingState: POINTER TO HLI_STATE_AXIS_COUPLING;
+	nState: INT;
+	bBusy: BOOL;
+	fbRTrig: R_TRIG;
+	bCouple: BOOL;
+	fbFTrig: F_TRIG;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* allow axis coupling *)
+gpAx[5]^.lr_mc_control.axis_coupling.enable_w := TRUE;
+
+
+pCoupling := ADR(gpAx[5]^.lr_mc_control.axis_coupling.command_w);
+p_AxisCouplingState := ADR(gpAx[5]^.lr_mc_control.axis_coupling.state_r);
+
+
+fbRTrig(clk := bCouple);
+fbFTrig(clk := bCouple);
+
+
+IF (fbRTrig.Q) THEN			(* start coupling *)
+	pCoupling^.desc[0].mode  := HLI_AXIS_COUPLING_DIRECT;
+	pCoupling^.desc[0].ax_nr := 5;
+	bBusy := TRUE;
+	nState := 10;
+END_IF
+
+
+IF (fbFTrig.Q) THEN		(* end coupling *)
+	pCoupling^.desc[0].mode  := HLI_AXIS_COUPLING_INACTIVE;
+	pCoupling^.desc[0].ax_nr := 0;
+	bBusy := TRUE;
+	nState := 10; 
+END_IF
+
+
+
+
+CASE nState OF
+
+0: (*IDLE *)
+	bBusy := FALSE;
+
+
+10: (* Koppeln oder Enkoppeln starten *)
+	pCoupling^.semaphor_rw := TRUE;
+	nState := nState + 10;
+
+20:	(* Warten auf Koppeln fertig *)
+	IF (pCoupling^.semaphor_rw = FALSE) THEN
+		nState := 0;
+	END_IF
+
+
+END_CASE]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

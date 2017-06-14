@@ -1,0 +1,13 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="ST_FileInfo" Id="{2853416d-e703-4065-85af-71901c8e8e51}">
+    <Declaration><![CDATA[TYPE ST_FileInfo :
+STRUCT
+	nSource: UDINT;
+	nOffset: UDINT;
+	sFilename: STRING(260);
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

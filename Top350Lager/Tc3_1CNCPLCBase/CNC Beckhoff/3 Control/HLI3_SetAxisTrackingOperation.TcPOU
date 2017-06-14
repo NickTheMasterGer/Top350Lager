@@ -1,0 +1,39 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.19">
+  <POU Name="HLI3_SetAxisTrackingOperation" Id="{801004ce-cb4c-4716-a1e5-08e359130ca3}">
+    <Declaration><![CDATA[FUNCTION HLI3_SetAxisTrackingOperation : BOOL
+VAR_INPUT
+	nHliAxisIdx: INT;
+	bPLCAxisEnable: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*    FUN: HLI_SetAxisTrackingOperation                      *)
+(* --------------------------------------------------------- *)
+(*   Desc:                                                   *)
+(*   Author: TV                                              *)
+(*   Date: 15.09.2006                                        *)
+(*   Rev.: 1.0                                               *)
+(*         1.1 13.08.2013 Nachführbetrieb nicht bei Achsfehler einschalten *)
+(* ========================================================= *)
+
+IF NOT HLI3_CheckAxisValid(nHliAxisIdx := nHliAxisIdx) THEN	
+	HLI3_SetAxisTrackingOperation := FALSE;
+	RETURN;
+END_IF
+
+(* tracking operation (follow up) on / off *)
+IF NOT bPLCAxisEnable THEN
+	gpAx[nHliAxisIdx]^.lr_mc_control.follow_up.command_w := TRUE;
+		HLI3_SetAxisTrackingOperation := TRUE;
+ELSE
+	gpAx[nHliAxisIdx]^.lr_mc_control.follow_up.command_w := FALSE;
+		HLI3_SetAxisTrackingOperation := FALSE;
+END_IF
+
+
+]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>

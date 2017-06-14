@@ -1,0 +1,87 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4018.5">
+  <POU Name="HLI3_DoChannelTFunction" Id="{c1825061-dadb-456f-af0b-e1291cd7337d}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK HLI3_DoChannelTFunction
+VAR_INPUT
+	/// Channel number 
+	nChanIdx: INT;
+	/// Number of T-function 
+	nFuncNr: UDINT;
+END_VAR
+VAR_OUTPUT
+	bBusy: BOOL;
+END_VAR
+VAR
+	bStartTimer: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* ========================================================= *)
+(*     FB: HLI_DoChannelTFunction                            *)
+(* --------------------------------------------------------- *)
+(*   Desc:                                                   *)
+(* Author: MK, MiB                                           *)
+(*   Rev.: 1.1                                               *)
+(*   Date: 18.07.2002                                        *)
+(*       : 08.04.2005, 03.03.2016 							 *)
+(* ========================================================= *)
+
+
+bBusy := FALSE;
+RETURN;
+
+IF NOT HLI3_CheckChannelValid(nChannel := nChanIdx) THEN
+	RETURN; (* A b b r u c h *)
+END_IF
+bBusy := TRUE;
+
+CASE nChanIdx OF
+	0:	(* cnc channel 1 -------------------------------------- *)
+		CASE nFuncNr OF
+			0:		bBusy := FALSE;
+			1:		bBusy := FALSE;
+			2:		bBusy := FALSE;
+			3:		bBusy := FALSE;
+			4:		bBusy := FALSE;
+			5:		bBusy := FALSE;
+			6:		bBusy := FALSE;
+			7:		bBusy := FALSE;
+			8:		bBusy := FALSE;
+
+			ELSE
+			ADSLOGDINT( msgCtrlMask :=    ADSLOG_MSGTYPE_MSGBOX
+			                           OR ADSLOG_MSGTYPE_LOG,
+						msgFmtStr   := 'T-Funktion (%d), Channel 1, HLI_DoChannelTFunction() not implemented!',
+						dintArg     := UDINT_TO_DINT(nFuncNr));
+				(* Quit the M-Function *)
+				bBusy := TRUE;
+		END_CASE;
+
+
+	1:	(* cnc channel 2 -------------------------------------- *)
+		CASE nFuncNr OF
+			0:		bBusy := FALSE;
+			1:		bBusy := FALSE;
+			2:		bBusy := FALSE;
+			3:		bBusy := FALSE;
+
+
+			ELSE
+				ADSLOGDINT( msgCtrlMask :=    ADSLOG_MSGTYPE_MSGBOX
+				                           OR ADSLOG_MSGTYPE_LOG,
+							msgFmtStr   := 'T-Funktion (%d), Channel 2, HLI_DoChannelTFunction() not implemented!',
+							dintArg     := UDINT_TO_DINT(nFuncNr));
+				(* Quit the M-Function *)
+				bBusy := FALSE;
+		END_CASE;
+
+ELSE
+	ADSLOGDINT( msgCtrlMask :=    ADSLOG_MSGTYPE_MSGBOX
+	                           OR ADSLOG_MSGTYPE_LOG,
+				msgFmtStr   := 'Unknown channel number (%d) in HLI_DoChannelTFunction',
+				dintArg     := INT_TO_DINT(nChanIdx));
+	bBusy := FALSE;
+END_CASE;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

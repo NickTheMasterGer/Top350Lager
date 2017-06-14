@@ -1,0 +1,14 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="ST_SoE_StringEx" Id="{906c9728-c359-4e42-a541-cf6a217c8b9d}">
+    <Declaration><![CDATA[TYPE ST_SoE_StringEx :
+STRUCT
+	dwAttribute: DWORD;
+	iActualSize: UINT;
+	iMaxSize: UINT;
+	strData: STRING(MAX_STRING_LENGTH);
+END_STRUCT
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

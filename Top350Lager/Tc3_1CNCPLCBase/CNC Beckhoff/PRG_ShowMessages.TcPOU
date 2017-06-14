@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4019.0">
+  <POU Name="PRG_ShowMessages" Id="{3add6422-7f87-47f0-a78a-763357959f3f}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM PRG_ShowMessages
+VAR
+	bStart: BOOL;
+	fbWarningMessages : FB_SimpleEventLog;
+	fbAlarmMessages : FB_SimpleEventLog;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*
+	TCEVENTCLASS_NONE			:=0,	 No class
+	TCEVENTCLASS_MAINTENANCE	:=1,	 Maintenance hint
+	TCEVENTCLASS_MESSAGE		:=2,	 Message
+	TCEVENTCLASS_HINT			:=3,	 Hint
+	TCEVENTCLASS_STATEINFO		:=4,	 State information
+	TCEVENTCLASS_INSTRUCTION	:=5,	 Instruction
+	TCEVENTCLASS_WARNING		:=6,	 Warning
+	TCEVENTCLASS_ALARM			:=7,	 Alarm
+	TCEVENTCLASS_PARAMERROR		:=8	 Parameter error
+*)
+
+
+(* Shows how to generate messages *)
+IF NOT bStart THEN
+	bStart 				:= TRUE;
+
+	fbWarningMessages
+		(Init			:= TRUE,
+		 SourceId		:= 51,
+		 Class			:= TCEVENTCLASS_WARNING,
+		 QuitRequireD	:= FALSE,
+		 adrAlarmArray	:= ADR(MSG_WARNING_List),
+		 adrQuitArray	:= ADR(MSG_WARNING_ListQuit)
+		);
+
+	fbAlarmMessages
+		(Init			:= TRUE,
+		 SourceId		:= 50,
+		 Class			:= TCEVENTCLASS_ALARM,
+		 QuitRequired	:= FALSE,
+		 adrAlarmArray 	:= ADR(MSG_ALARM_List),
+		 adrQuitArray	:= ADR(MSG_ALARM_ListQuit)
+		);
+ELSE
+	fbWarningMessages
+		(Init			:= FALSE);
+
+	fbAlarmMessages
+		(Init			:= FALSE);	
+END_IF
+
+
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

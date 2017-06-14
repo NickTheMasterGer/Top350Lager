@@ -1,0 +1,62 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.12">
+  <DUT Name="E_HLI_MM_STATE" Id="{db0409ed-a0b8-4088-8e08-aa67e5c7ae19}">
+    <Declaration><![CDATA[TYPE E_HLI_MM_STATE :
+(
+	SMM_ERROR := -1,
+	/// axis to the 2.channel                     
+	SMM_SUSPEND_AXIS_CHAN1 := 0,
+	/// wait for suspension of the 1.channel      
+	SMM_SUSPEND_AXIS_CHAN1_WAIT,
+	SMM_STORE_POSITION,
+	SMM_INIT_MANUAL_MODE,
+	SMM_SWITCH_TO_M_READY,
+	SMM_SWITCH_TO_M_READY_WAIT,
+	SMM_STATUS_READY,
+	/// wait for direction input                  
+	SMM_WAIT_FOR_ACTIVATE,
+	/// switch to manual-mode                     
+	SMM_SWITCH_TO_M_MODE,
+	/// wait for manual-mode switch               
+	SMM_SWITCH_TO_M_MODE_WAIT,
+	/// parametrize, tip parameter                
+	SMM_SET_TIP_PARAM_AXIS1,
+	/// wait for parametrize, tip parameter       
+	SMM_SET_TIP_PARAM_AXIS1_WAIT,
+	/// parametrize, tip parameter                
+	SMM_SET_TIP_PARAM_AXIS2,
+	/// wait for parametrize, tip parameter       
+	SMM_SET_TIP_PARAM_AXIS2_WAIT,
+	/// activate tip mode axis 1                  
+	SMM_ACTIVE_TIP_MODE_AXIS1,
+	/// wait for parametrize, tip mode axis 1     
+	SMM_ACTIVE_TIP_MODE_AXIS1_WAIT,
+	/// activate tip mode axis 2                  
+	SMM_ACTIVE_TIP_MODE_AXIS2,
+	/// wait for parametrize, tip mode axis 2     
+	SMM_ACTIVE_TIP_MODE_AXIS2_WAIT,
+	/// control manual mode axis 1 and axis 2     
+	SMM_CONTROL_M_MODE,
+	/// deactivate tip mode axis 1                
+	SMM_DEACTIVE_TIP_MODE_AXIS1,
+	/// wait for deactivating, tip mode axis 1    
+	SMM_DEACTIVE_TIP_MODE_AXIS1_WAIT,
+	/// deactivate tip mode axis 2                
+	SMM_DEACTIVE_TIP_MODE_AXIS2,
+	/// wait for deactivating, tip mode axis 2    
+	SMM_DEACTIVE_TIP_MODE_AXIS2_WAIT,
+	/// move back or end                          
+	SMM_MOVEBACK_OR_END,
+	/// MDI mode switch and activation            
+	SMM_ACTIVATE_MDI_MODE,
+	/// wait for MDI mode switch and activation   
+	SMM_ACTIVATE_MDI_MODE_WAIT,
+	/// wait for MDI movement                     
+	SMM_PROCESS_READY_MDI_MODE,
+	/// axis to the 1.channel                     
+	SMM_SUSPEND_AXIS_CHAN2
+);
+END_TYPE
+]]></Declaration>
+    <ObjectProperties />
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,53 @@
+﻿<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.23">
+  <POU Name="FB_WriteCNCZeroOffset" Id="{21190a3c-6246-4e8a-9891-7639fbeb1e96}">
+    <Declaration><![CDATA[/// ------------------------------------------------------------------------------------ 
+/// Desc:	Description																	
+///**************************************************************************************
+///**************************************************************************************
+///	 Write NPV Value directly to CNC core using V.G. Variables via ADS	
+///**************************************************************************************
+FUNCTION_BLOCK FB_WriteCNCZeroOffset
+VAR_INPUT
+	/// rising edge to start 
+	bExecute: BOOL;
+	/// which table, G54=1, G55=2, G55=3, .... 
+	nG159Index: BYTE;
+	/// Channel Indedx
+	nChanIdx: UDINT;
+	/// Axis name in channel 
+	sAxisName: STRING(95);
+	/// value to set 
+	lrValue: LREAL;
+END_VAR
+VAR_OUTPUT
+	bBusy: BOOL;
+	bError: BOOL;
+	nErrorID: UDINT;
+END_VAR
+VAR
+	fbAdsWrite: ADSWRITE;
+	stCNCG159VG: ST_CNCG159VG;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[stCNCG159VG.dValue := LREAL_TO_DINT(lrValue * 10000);
+stCNCG159VG.sTarget := 'V.G.NP[';
+stCNCG159VG.sTarget := CONCAT(stCNCG159VG.sTarget, BYTE_TO_STRING(nG159Index));
+stCNCG159VG.sTarget := CONCAT(stCNCG159VG.sTarget, '].V.');
+stCNCG159VG.sTarget := CONCAT(stCNCG159VG.sTarget,sAxisName);
+
+fbAdsWrite(
+	PORT:= 552 ,
+	IDXGRP:= 16#22300 + nChanIdx+1,
+	IDXOFFS:=16#3F,
+	LEN:= SIZEOF(stCNCG159VG) ,
+	SRCADDR:=ADR(stCNCG159VG) ,
+	WRITE:= bExecute,
+	TMOUT:= ,
+	BUSY=> bBusy,
+	ERR=> bError ,
+	ERRID=> nErrorID);]]></ST>
+    </Implementation>
+    <ObjectProperties />
+  </POU>
+</TcPlcObject>
